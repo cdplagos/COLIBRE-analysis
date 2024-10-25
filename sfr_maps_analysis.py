@@ -175,6 +175,7 @@ for z in range(0, 1): #len(snap_files)):
        mstar_profile = np.zeros(shape = (ngals, nr))
        oh_profile = np.zeros(shape = (ngals, nr))
        feh_profile = np.zeros(shape = (ngals, nr))
+       coldgas_profile = np.zeros(shape = (ngals, nr))
        mdust_profile = np.zeros(shape = (ngals, nr))
        npart0_profile = np.zeros(shape = (ngals, nr))
        npart4_profile = np.zeros(shape = (ngals, nr))
@@ -260,6 +261,7 @@ for z in range(0, 1): #len(snap_files)):
                          mh_inr = mh_inr[0]
                          mo_inr = mo_inr[0]
                          mfe_inr = mfe_inr[0]
+                         mpart_inr = m_part0[inr]
                          #calculate profiles
                          sfr_profile[g,i] = np.sum(sfr_inr)
                          mHI_profile[g,i] = np.sum(mh_inr * speciesfrac_part0[inr,1])
@@ -269,6 +271,8 @@ for z in range(0, 1): #len(snap_files)):
                          coldp = np.where((temp_inr < 10**(4.5)) & (dens_inr > 0.1)) #select particles with temperatures cooler than 10^4.5K and calculate metallicity profiles with those particles only.
                          oh_profile[g,i] = np.sum(mo_inr[coldp]) / np.sum(mh_inr[coldp])
                          feh_profile[g,i] = np.sum(mfe_inr[coldp]) / np.sum(mh_inr[coldp])
+                         coldgas_profile[g,i] = np.sum(mpart_inr[coldp])
+
               elif (family_method == 'grid'):
                   if(method == 'grid_random_map'):
                       dcentre_i, dcentre_j = distance_2d_grid_random(x_in[g], y_in[g], coord_in_p0)
@@ -286,6 +290,7 @@ for z in range(0, 1): #len(snap_files)):
                           mh_inr = mh_inr[0]
                           mo_inr = mo_inr[0]
                           mfe_inr = mfe_inr[0]
+                          mpart_inr = m_part0[inr]
                           speciesfrac_inr = speciesfrac_inr[0]
 
                           sfr_inr = sfr_part0[inr]
@@ -304,9 +309,11 @@ for z in range(0, 1): #len(snap_files)):
                                   mh_inj = mh_inr[inrj]
                                   mo_inj = mo_inr[inrj] 
                                   mfe_inj = mfe_inr[inrj] 
+                                  mpart_inj = mpart_inr[inrj]
                                   coldp = np.where((temp_inj < 10**(4.5)) & (dens_inj > 0.1)) #select particles with temperatures cooler than 10^4.5K and calculate metallicity profiles with those particles only.
                                   oh_profile[g,i * len(gr) + j] = np.sum(mo_inj[coldp]) / np.sum(mh_inj[coldp])
                                   feh_profile[g,i * len(gr) + j] = np.sum(mfe_inj[coldp]) / np.sum(mh_inj[coldp])
+                                  coldgas_profile[g,i * len(gr) + j] = np.sum(mpart_inj[coldp])
                                   
        
            #select particles type 4 with the same Subhalo ID
@@ -357,6 +364,7 @@ for z in range(0, 1): #len(snap_files)):
        np.savetxt(model_name + 'Mdust_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", mdust_profile)
        np.savetxt(model_name + 'NumberPart0_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", npart0_profile)
        np.savetxt(model_name + 'NumberPart4_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", npart4_profile)
+       np.savetxt(model_name + 'Mcoldgas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", coldgas_profile)
 
        #save radii info
        np.savetxt(model_name + 'radii_info_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", r_dist_centre)
