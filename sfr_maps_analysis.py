@@ -8,29 +8,33 @@ import common
 
 
 ###### choose what kind of profiles you want (choose one only) ##################
-#family_method = 'radial_profiles'
-family_method = 'grid'
-#method = 'circular_apertures_face_on_map'
+family_method = 'radial_profiles'
+method = 'circular_apertures_face_on_map'
 #method = 'circular_apertures_random_map'
 #method = 'spherical_apertures'
+
+#family_method = 'grid'
 #method = 'grid_face_on_map' #to be coded
-method = 'grid_random_map'
+#method = 'grid_random_map'
 #method = 'voronoi_maps'  #to be coded
 
 #################################################################################
 
 ################## select the model and redshift you want #######################
-#model_name = 'L0100N0752/Thermal_non_equilibrium/'
+model_name = 'L0100N0752/Thermal_non_equilibrium/'
 #model_name = 'L0050N0752/Thermal_non_equilibrium/'
-model_name = 'L0025N0376/Thermal_non_equilibrium/'
+#model_name = 'L0025N0376/Thermal_non_equilibrium/'
 model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
 
 #definitions below correspond to z=0
-#snap_files = ['0127', '0092', '0064', '0056', '0048', '0040', '0026', '0018']
-#zstarget = [0.0, 1.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0]
+snap_files = ['0127', '0119', '0114', '0102', '0092', '0076', '0064', '0056', '0048', '0040', '0026', '0018']
+zstarget = [0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0]
 
-snap_files = ['0123', '0088', '0072', '0060', '0048', '0040'] #, '0026', '0020']
-zstarget = [0.0, 1.0, 2.0, 3.5, 4.0, 5.0, 6.0] #, 8.0, 10.0]
+#snap_files = ['0056', '0048', '0040', '0026', '0018']
+#zstarget = [4.0, 5.0, 6.0, 8.0, 10.0]
+
+#snap_files = ['0123', '0088', '0072', '0060', '0048', '0040'] #, '0026', '0020']
+#zstarget = [0.0, 1.0, 2.0, 3.5, 4.0, 5.0, 6.0] #, 8.0, 10.0]
 
 #################################################################################
 ###################### simulation units #########################################
@@ -92,7 +96,7 @@ def distance_2d_faceon(x,y,z, coord, spin_vec):
 
  
 ##### loop through redshifts ######
-for z in range(0, 1): #len(snap_files)):
+for z in range(0,len(snap_files)):
     snap_file =snap_files[z]
     ztarget = zstarget[z]
     comov_to_physical_length = 1.0 / (1.0 + ztarget)
@@ -101,13 +105,16 @@ for z in range(0, 1): #len(snap_files)):
     #fields_fof = /SOAP/HostHaloIndex, 
     #/InputHalos/HBTplus/HostFOFId
     fields_sgn = {'InputHalos': ('HaloCatalogueIndex', 'IsCentral')} 
-    fields ={'ExclusiveSphere/30kpc': ('StellarMass', 'StarFormationRate', 'HalfMassRadiusStars', 'CentreOfMass', 'AtomicHydrogenMass', 'MolecularHydrogenMass', 'KappaCorotStars', 'KappaCorotGas', 'DiscToTotalStellarMassFraction', 'SpinParameter', 'MassWeightedMeanStellarAge', 'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasLowLimit' ,'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasHighLimit', 'AngularMomentumStars')}
+    fields ={'ExclusiveSphere/30kpc': ('StellarMass', 'StarFormationRate', 'HalfMassRadiusStars', 'CentreOfMass', 'AtomicHydrogenMass', 'MolecularHydrogenMass', 'KappaCorotStars', 'KappaCorotGas', 'DiscToTotalStellarMassFraction', 'SpinParameter', 'MassWeightedMeanStellarAge', 'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasLowLimit' ,'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasHighLimit', 'AngularMomentumStars', 'DustLargeGrainMass', 'DustSmallGrainMass')}
     h5data_groups = common.read_group_data_colibre(model_dir, snap_file, fields)
     h5data_idgroups = common.read_group_data_colibre(model_dir, snap_file, fields_sgn)
-    (m30, sfr30, r50, cp, mHI, mH2, kappacostar, kappacogas, disctotot, spin, stellarage, ZgasLow, ZgasHigh, Jstars) = h5data_groups
+    (m30, sfr30, r50, cp, mHI, mH2, kappacostar, kappacogas, disctotot, spin, stellarage, ZgasLow, ZgasHigh, Jstars, mdustl, mdusts) = h5data_groups
 
     #unit conversion
+    mdust = (mdustl + mdusts) * Mu
     m30 = m30 * Mu
+    mHI = mHI * Mu
+    mH2 = mH2 * Mu
     sfr30 = sfr30 * Mu / tu 
     r50 = r50 * Lu * comov_to_physical_length
     stellarage = stellarage * tu / 1e9 #in Gyr
@@ -144,11 +151,12 @@ for z in range(0, 1): #len(snap_files)):
        y_in = yg[select]
        z_in = zg[select]
        Jstars_in = Jstars[select, :]
+       mdust_in = mdust[select]
        spin_vec_norm = Jstars_in / np.sqrt( Jstars_in[:,0]**2 + Jstars_in[:,1]**2 + Jstars_in[:,2]**2) #normalise Jstars vector. Needed to find the plane of rotation
        spin_vec_norm = spin_vec_norm[0] #reduce dimensionality
    
        #save galaxy properties of interest
-       gal_props = np.zeros(shape = (ngals, 17))
+       gal_props = np.zeros(shape = (ngals, 18))
        gal_props[:,0] = sgn_in
        gal_props[:,1] = is_central_in
        gal_props[:,2] = x_in
@@ -166,6 +174,7 @@ for z in range(0, 1): #len(snap_files)):
        gal_props[:,14] = stellarage_in
        gal_props[:,15] = ZgasLow_in
        gal_props[:,16] = ZgasHigh_in
+       gal_props[:,17] = mdust_in
        np.savetxt(model_name + 'GalaxyProperties_z' + str(ztarget) + '.txt', gal_props)
        
        #initialise profile arrays
@@ -192,7 +201,8 @@ for z in range(0, 1): #len(snap_files)):
        h5data = common.read_particle_data_colibre(model_dir, snap_file, fields)
        
        
-       #  SpeciesFractions: "elec", "HI", "HII", "Hm", "HeI", "HeII", "HeIII", "H2", "H2p", "H3p"
+       #  SpeciesFractions: "elec", "HI", "HII", "Hm", "HeI", "HeII", "HeIII", "H2", "H2p", "H3p" (for snapshots)
+       #  SpeciesFractions: "HI", "HII",  "H2" (snipshots to be confirmed)
        #  ElementMassFractions: "Hydrogen", "Helium", "Carbon", "Nitrogen", "Oxygen", "Neon", "Magnesium", "Silicon", "Iron", "Strontium", "Barium", "Europium"
        
        #SubhaloID is now unique to the whole box, so we only need to match a signel number
@@ -214,6 +224,7 @@ for z in range(0, 1): #len(snap_files)):
        coordT4 = coordT4 * Lu * comov_to_physical_length
        mT4 = mT4 * Mu
        dens = dens * density_cgs_conv / mH #in cm^-3
+       print(min(dens), max(dens))
        ###########################################################################################################
        ############## now calculate maps of properties and save them ############################################
        
@@ -240,11 +251,13 @@ for z in range(0, 1): #len(snap_files)):
               sfr_part0 = sfr[partin]
               temp_part0 = temp[partin]
               dust_part0 = DustMassFracTot[partin]
-              elementmassfracs_part0 = elementmassfracsdiff[partin,:]
+              elementmassfracs_part0 = elementmassfracs[partin,:]
+              elementmassfracsdiff_part0 = elementmassfracsdiff[partin,:]
               dens_part0 = dens[partin]
               speciesfrac_part0 = speciesfrac[partin,:]
               #reduce dimensionality
               elementmassfracs_part0 = elementmassfracs_part0[0]
+              elementmassfracsdiff_part0 = elementmassfracsdiff_part0[0]
               speciesfrac_part0 = speciesfrac_part0[0]
               if (family_method == 'radial_profiles'):
                   for i,r in enumerate(xr):
@@ -252,13 +265,15 @@ for z in range(0, 1): #len(snap_files)):
                       if(len(dcentre[inr]) > 0):
                          npart0_profile[g,i] = len(dcentre[inr])
                          temp_inr = temp_part0[inr]
-                         dens_inr = dust_part0[inr]
+                         dens_inr = dens_part0[inr]
                          mh_inr = m_part0[inr] * elementmassfracs_part0[inr,0]
-                         mo_inr = m_part0[inr] * elementmassfracs_part0[inr,4]
-                         mfe_inr = m_part0[inr] * elementmassfracs_part0[inr,8]
+                         mhdiff_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,0]
+                         mo_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,4]
+                         mfe_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,8]
                          sfr_inr = sfr_part0[inr]
                          #reduce dimensionality
                          mh_inr = mh_inr[0]
+                         mhdiff_inr = mhdiff_inr[0]
                          mo_inr = mo_inr[0]
                          mfe_inr = mfe_inr[0]
                          mpart_inr = m_part0[inr]
@@ -268,10 +283,11 @@ for z in range(0, 1): #len(snap_files)):
                          mH2_profile[g,i] = np.sum(mh_inr * speciesfrac_part0[inr,7] * 2) #factor 2 comes from H2 being two hydrogen atoms
                          mdust_profile[g,i] = np.sum(mh_inr * dust_part0[inr])
        
-                         coldp = np.where((temp_inr < 10**(4.5)) & (dens_inr > 0.1)) #select particles with temperatures cooler than 10^4.5K and calculate metallicity profiles with those particles only.
-                         oh_profile[g,i] = np.sum(mo_inr[coldp]) / np.sum(mh_inr[coldp])
-                         feh_profile[g,i] = np.sum(mfe_inr[coldp]) / np.sum(mh_inr[coldp])
-                         coldgas_profile[g,i] = np.sum(mpart_inr[coldp])
+                         coldp = np.where((temp_inr < 10**(4.5)) & (dens_inr > 0)) #select particles with temperatures cooler than 10^4.5K and calculate metallicity profiles with those particles only.
+                         if(len(mo_inr[coldp]) > 0):
+                            oh_profile[g,i] = np.sum(mo_inr[coldp]) / np.sum(mhdiff_inr[coldp])
+                            feh_profile[g,i] = np.sum(mfe_inr[coldp]) / np.sum(mhdiff_inr[coldp])
+                            coldgas_profile[g,i] = np.sum(mpart_inr[coldp])
 
               elif (family_method == 'grid'):
                   if(method == 'grid_random_map'):
@@ -280,14 +296,16 @@ for z in range(0, 1): #len(snap_files)):
                       inr = np.where((dcentre_i >= (ri - dg/2)*1e-3) & (dcentre_i < (ri + dg/2)*1e-3))
                       if(len(dcentre_i[inr]) > 0):
                           temp_inr = temp_part0[inr]
-                          dens_inr = dust_part0[inr]
+                          dens_inr = dens_part0[inr]
                           mh_inr = m_part0[inr] * elementmassfracs_part0[inr,0]
-                          mo_inr = m_part0[inr] * elementmassfracs_part0[inr,4]
-                          mfe_inr = m_part0[inr] * elementmassfracs_part0[inr,8]
+                          mhdiff_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,0]
+                          mo_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,4]
+                          mfe_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,8]
                           speciesfrac_inr = speciesfrac_part0[inr,:]
                           dust_part_inr = dust_part0[inr]
                           #reduce dimensionality
                           mh_inr = mh_inr[0]
+                          mhdiff_inr = mhdiff_inr[0]
                           mo_inr = mo_inr[0]
                           mfe_inr = mfe_inr[0]
                           mpart_inr = m_part0[inr]
@@ -306,14 +324,15 @@ for z in range(0, 1): #len(snap_files)):
                                   mdust_profile[g,i * len(gr) + j] = np.sum(mh_inr[inrj] * dust_part_inr[inrj])
                                   temp_inj = temp_inr[inrj]
                                   dens_inj = dens_inr[inrj]
-                                  mh_inj = mh_inr[inrj]
+                                  mh_inj = mhdiff_inr[inrj]
                                   mo_inj = mo_inr[inrj] 
                                   mfe_inj = mfe_inr[inrj] 
                                   mpart_inj = mpart_inr[inrj]
-                                  coldp = np.where((temp_inj < 10**(4.5)) & (dens_inj > 0.1)) #select particles with temperatures cooler than 10^4.5K and calculate metallicity profiles with those particles only.
-                                  oh_profile[g,i * len(gr) + j] = np.sum(mo_inj[coldp]) / np.sum(mh_inj[coldp])
-                                  feh_profile[g,i * len(gr) + j] = np.sum(mfe_inj[coldp]) / np.sum(mh_inj[coldp])
-                                  coldgas_profile[g,i * len(gr) + j] = np.sum(mpart_inj[coldp])
+                                  coldp = np.where((temp_inj < 10**(4.5)) & (dens_inj > 0)) #select particles with temperatures cooler than 10^4.5K and calculate metallicity profiles with those particles only.
+                                  if(len(mo_inj[coldp]) > 0):
+                                     oh_profile[g,i * len(gr) + j] = np.sum(mo_inj[coldp]) / np.sum(mh_inj[coldp])
+                                     feh_profile[g,i * len(gr) + j] = np.sum(mfe_inj[coldp]) / np.sum(mh_inj[coldp])
+                                     coldgas_profile[g,i * len(gr) + j] = np.sum(mpart_inj[coldp])
                                   
        
            #select particles type 4 with the same Subhalo ID
