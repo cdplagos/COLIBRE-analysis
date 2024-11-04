@@ -94,9 +94,9 @@ def wmedians_variable_bins(x=None, y=None, nbins = 5, add_last_bin = True):
 
     if(add_last_bin):
         #add a bin with the 10 most massive objects
-        xmed[nbins_total-1] = np.mean(xin[len(x) - 10: len(x)])
-        per = np.percentile(yin[len(x) - 10: len(x)], [16, 50, 84])
-        sigma = np.std(yin[len(x) - 10: len(x)])
+        xmed[nbins_total-1] = np.mean(xin[len(x) - 20: len(x)])
+        per = np.percentile(yin[len(x) - 20: len(x)], [16, 50, 84])
+        sigma = np.std(yin[len(x) - 20: len(x)])
         result[0, nbins_total-1] = per[1]
         result[1, nbins_total-1] = per[0]
         result[2, nbins_total-1] = per[2]
