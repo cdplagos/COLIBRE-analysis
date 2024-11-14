@@ -7,8 +7,10 @@ from hyperfit.data import ExampleData
 
 #define radial bins of interest. This going from 0 to 50kpc, in bins of 1kpc
 dir_data = 'Runs/'
-model_name = 'L0100N0752/Thermal_non_equilibrium'
+#model_name = 'L0100N0752/Thermal_non_equilibrium'
 #model_name = 'L0025N0376/Thermal_non_equilibrium'
+model_name = 'L0050N0752/Thermal_non_equilibrium'
+
 #choose the type of profile to be read
 #method = 'spherical_apertures'
 method = 'circular_apertures_face_on_map'
