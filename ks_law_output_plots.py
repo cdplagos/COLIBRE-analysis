@@ -4,7 +4,9 @@ import common
 import h5py
 
 dir_data = 'Runs/'
-model_name = 'L0100N0752/Thermal_non_equilibrium'
+#model_name = 'L0100N0752/Thermal_non_equilibrium'
+model_name = 'L0050N0752/Thermal_non_equilibrium'
+
 model_name_highres =  'L0012N0376/Thermal_non_equilibrium'
 model_name_lowhres =  'L0050N0752/Thermal_non_equilibrium'
 model_name_method =  'L0025N0376/Thermal_non_equilibrium'
@@ -145,15 +147,17 @@ def plot_gas_all_redshifts(ax, gas_type='HI', label = True):
 
     #redshifts = ['0.0', '1.0', '2.0', '3.5', '4.0', '5.0']
     #cols = ['DarkRed', 'Salmon', 'Olive', 'YellowGreen', 'MediumBlue', 'Indigo']
-    redshifts = ['0.0', '1.0', '3.0', '4.0', '5.0']
-    cols = ['DarkRed', 'Salmon', 'YellowGreen', 'MediumBlue', 'Indigo']
+    #redshifts = ['0.0', '1.0', '3.0', '4.0', '5.0']
+    #cols = ['DarkRed', 'Salmon', 'YellowGreen', 'MediumBlue', 'Indigo']
+    redshifts = ['0.0', '1.0', '2.0', '3.0']
+    cols = ['DarkRed', 'Olive', 'MediumBlue', 'Indigo']
 
     for i,z in enumerate(redshifts):
         data = np.loadtxt(dir_data + model_name + '/ProcessedData/' + gas_type + 'SFLaw_z' + z + '_' + method + '.txt')
         ax.plot(data[:,0], data[:,1], linestyle = 'solid', color=cols[i], label = 'z='+ z if label else None)
         ax.fill_between(data[:,0], data[:,1] - data[:,2], data[:,1] + data[:,3], facecolor = cols[i], alpha=0.2, interpolate=True) 
 
-
+    return cols
 ####################### plot all methods at z=0 #########################################
 min_gas_dens = -2
 fig = plt.figure(figsize=(14,6))
@@ -300,20 +304,20 @@ for i,s in enumerate(subplots):
     common.prepare_ax(ax, xmin, xmax, ymin, ymax, xtits[i], ytits[i], locators=(0.5, 0.5, 0.5, 0.5))
 
     if i == 0:
-        plot_gas_all_redshifts(ax, gas_type='HI', label = True)
+        cols = plot_gas_all_redshifts(ax, gas_type='HI', label = True)
         plot_HI_obs(ax)
         plot_lines_constant_deptime(ax, xmin, xmax)
         #common.prepare_legend(ax, ['DarkRed', 'Salmon', 'Olive', 'YellowGreen', 'MediumBlue', 'Indigo','DarkGreen','Teal'], loc = 2)
-        common.prepare_legend(ax, ['DarkRed', 'Salmon', 'YellowGreen', 'MediumBlue', 'Indigo','DarkGreen','Teal'], loc = 2)
+        common.prepare_legend(ax, cols, loc = 2)
 
     if i == 1:
-        plot_gas_all_redshifts(ax, gas_type='H2', label = False)
+        _ = plot_gas_all_redshifts(ax, gas_type='H2', label = False)
         plot_H2_obs(ax)
         plot_lines_constant_deptime(ax, xmin, xmax)
         common.prepare_legend(ax, ['Red', 'Red', 'CadetBlue','CornflowerBlue'], loc = 2)
 
     if i == 2:
-        plot_gas_all_redshifts(ax, gas_type='Hneutral', label = False)
+        _ = plot_gas_all_redshifts(ax, gas_type='Hneutral', label = False)
         plot_Hneutral_obs(ax)
         plot_lines_constant_deptime(ax, xmin, xmax)
         common.prepare_legend(ax, ['navy','MediumBlue'], loc = 2)

@@ -232,7 +232,14 @@ def plot_depletion_times_vs_property_deviations(mH2_prof_total, oh_prof_total, m
            yup = yplot[2,:]
            ax.fill_between(xplot, ydn, yup, color=cols[j], alpha=0.2, interpolate=True)
            ax.plot(xplot, ymed, linestyle='solid', color=cols[j] , label=labels[j])
-   
+  
+    if(name_plot== 'TauDepH2'):
+       ax.text(-1.9, ymin + 0.1 * ymin, "Molecular hydrogen", fontsize=12)
+    if(name_plot== 'TauDepHI'):
+       ax.text(-1.9, ymin + 0.1 * ymin, "Atomic hydrogen", fontsize=12)
+    if(name_plot== 'TauDepHn'):
+       ax.text(-1.9, ymin + 0.1 * ymin, "Neutral hydrogen", fontsize=12)
+
     common.prepare_legend(ax, cols, loc = 1)
    
     plt.tight_layout()
@@ -431,7 +438,7 @@ for s in range(0,len(zlist)):
 def tau_dep_redshift_evo(tau_sfr_z, zbins_sfr_z, tau_sfr_md, mdbins_sfr_z, tau_sfr_ssfr, ssfrbins_sfr_z, tau_sfr_sm, smbins_sfr_z, name_plot='TauDepH2', ylabel="$\\tau_{\\rm H_2}/\\rm Gyr$", yrange=[0.01,10]):
      ###################################################################################################################
      ###################### depletion times of individual particles as a function of metallicity ####################################################
-     fig = plt.figure(figsize=(5,5))
+     fig = plt.figure(figsize=(5,4))
      ytit = ylabel
      xtit = "$\\rm log_{10}(O/H)$"
      xmin, xmax, ymin, ymax = -3, -1, yrange[0], yrange[1]
@@ -465,7 +472,7 @@ def tau_dep_redshift_evo(tau_sfr_z, zbins_sfr_z, tau_sfr_md, mdbins_sfr_z, tau_s
     
      ###################################################################################################################
      ###################### depletion times of individual particles as a function of dust mass ####################################################
-     fig = plt.figure(figsize=(5,5))
+     fig = plt.figure(figsize=(5,4))
      xtit = "$\\rm log_{10}(\\Sigma_{\\rm dust}/M_{\\odot}\\,pc^{-2})$"
      xmin, xmax = -1.5, 1.5
     
@@ -494,7 +501,7 @@ def tau_dep_redshift_evo(tau_sfr_z, zbins_sfr_z, tau_sfr_md, mdbins_sfr_z, tau_s
     
      ###################################################################################################################
      ###################### depletion times of individual particles as a function of dust mass ####################################################
-     fig = plt.figure(figsize=(5,5))
+     fig = plt.figure(figsize=(5,4))
      xtit = "$\\rm log_{10}(\\Sigma_{\\rm sSFR}/yr^{-1})$"
      xmin, xmax = -11, -7
     
@@ -516,7 +523,7 @@ def tau_dep_redshift_evo(tau_sfr_z, zbins_sfr_z, tau_sfr_md, mdbins_sfr_z, tau_s
             ax.fill_between(xplot[0,:], ydn, yup, color=cols[j], alpha=0.2, interpolate=True)
             ax.plot(xplot[0,:], ymed, linestyle='dotted', color=cols[j] , label='z=%s' % str(ztoplot[j]))
     
-     common.prepare_legend(ax, cols, loc = 3)
+     #common.prepare_legend(ax, cols, loc = 3)
     
      plt.tight_layout()
     
@@ -525,8 +532,8 @@ def tau_dep_redshift_evo(tau_sfr_z, zbins_sfr_z, tau_sfr_md, mdbins_sfr_z, tau_s
      ###################################################################################################################
      ###################################################################################################################
      ###################### depletion times of individual particles as a function of dust mass ####################################################
-     fig = plt.figure(figsize=(5,5))
-     xtit = "$\\rm log_{10}(\\Sigma_{\\star}/M_{\\odot})$"
+     fig = plt.figure(figsize=(5,4))
+     xtit = "$\\rm log_{10}(\\Sigma_{\\star}/M_{\\odot}\\, pc^{-2})$"
      xmin, xmax = -0.5, 3
     
      ax = fig.add_subplot(111)
@@ -546,12 +553,12 @@ def tau_dep_redshift_evo(tau_sfr_z, zbins_sfr_z, tau_sfr_md, mdbins_sfr_z, tau_s
             ax.fill_between(xplot[0,:], ydn, yup, color=cols[j], alpha=0.2, interpolate=True)
             ax.plot(xplot[0,:], ymed, linestyle='dotted', color=cols[j] , label='z=%s' % str(ztoplot[j]))
     
-     common.prepare_legend(ax, cols, loc = 1)
+     #common.prepare_legend(ax, cols, loc = 2)
     
      plt.tight_layout()
     
      common.savefig(outdir, fig, name_plot + '_vs_stellarmass_vs_redshift_' + method + '_dr_' + str(dr) + '.pdf')
     
 
-tau_dep_redshift_evo(tau_sfr_z, zbins_sfr_z, tau_sfr_md, mdbins_sfr_z, tau_sfr_ssfr, ssfrbins_sfr_z, tau_sfr_sm, smbins_sfr_z, name_plot='TauDepH2', ylabel="$\\tau_{\\rm H_2}/\\rm Gyr$", yrange=[0.01,10])
+tau_dep_redshift_evo(tau_sfr_z, zbins_sfr_z, tau_sfr_md, mdbins_sfr_z, tau_sfr_ssfr, ssfrbins_sfr_z, tau_sfr_sm, smbins_sfr_z, name_plot='TauDepH2', ylabel="$\\tau_{\\rm H_2}/\\rm Gyr$", yrange=[0.01,3])
 tau_dep_redshift_evo(tau_sfr_z_hi, zbins_sfr_z_hi, tau_sfr_md_hi, mdbins_sfr_z_hi, tau_sfr_ssfr_hi, ssfrbins_sfr_z_hi, tau_sfr_sm_hi, smbins_sfr_z_hi, name_plot='TauDepHI', ylabel="$\\tau_{\\rm HI}/\\rm Gyr$", yrange=[0.1,100])

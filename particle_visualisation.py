@@ -84,6 +84,13 @@ dz = 1.0
 zbins = np.arange(zmin, zmax, dz)
 xz = zbins + dz/2.0
 
+nmin = -2
+nmax = 4
+dn = 0.2
+nhbins = np.arange(nmin, nmax, dn)
+xn = nhbins + dn/2.0
+
+
 frac_sfr = np.zeros(shape = (4, len(ztarget)))
 frac_sfr_z = np.zeros(shape = (2, len(ztarget), len(zbins)))
 
@@ -92,6 +99,9 @@ frac_h2 = np.zeros(shape = (4, len(ztarget)))
 
 frac_wnm = np.zeros(shape = (2, len(ztarget)))
 frac_cnm = np.zeros(shape = (2, len(ztarget)))
+
+dens_cnm = np.zeros(shape = (3, len(ztarget)))
+dens_cnm_w = np.zeros(shape = (3, 3, len(ztarget)))
 
 med_tauh2 = np.zeros(shape = (3,len(ztarget)))
 med_tauhi = np.zeros(shape = (3,len(ztarget)))
@@ -102,6 +112,10 @@ zbins_sfr_z = np.zeros(shape = (len(ztarget), nz+1))
 tau_sfr_md = np.zeros(shape = (len(ztarget), 3, nz+1))
 mdbins_sfr_z = np.zeros(shape = (len(ztarget), nz+1))
 
+
+hist_cnm_h2 = np.zeros(shape = (len(ztarget), len(xn)))
+hist_cnm_hi = np.zeros(shape = (len(ztarget), len(xn)))
+hist_cnm_sfr = np.zeros(shape = (len(ztarget), len(xn)))
 
 for i,z in enumerate(ztarget):
      print("Will process redshift ", z)
@@ -118,7 +132,6 @@ for i,z in enumerate(ztarget):
 
      T = np.log10(T)
      dens = np.log10(dens)
-
 
      for j in range(0,len(zbins)):
          ind = np.where((np.log10(zgas) >= xz[j] - dz/2.0) & (np.log10(zgas) < xz[j] + dz/2.0) & (sfr > 0))
@@ -152,6 +165,22 @@ for i,z in enumerate(ztarget):
      ind = np.where(T < np.log10(1000))
      frac_cnm[0,i] = np.sum(mHI[ind]) / np.sum(mgas[ind])
      frac_cnm[1,i] = np.sum(mH2[ind]) / np.sum(mgas[ind])
+  
+     H, _ = np.histogram(dens[ind], weights = mH2[ind] / sum(mH2), bins=np.append(nhbins,nmax))
+     hist_cnm_h2[i,:] =  H
+     H, _ = np.histogram(dens[ind], weights = mHI[ind] / sum(mHI), bins=np.append(nhbins,nmax))
+     hist_cnm_hi[i,:] =  H
+     H, _ = np.histogram(dens[ind], weights = sfr[ind] / sum(sfr), bins=np.append(nhbins,nmax))
+     hist_cnm_sfr[i,:] =  H
+
+     dens_cnm[0,i] = np.log10(sum(10**dens[ind] * mH2[ind]) / sum(mH2[ind]))
+     dens_cnm[1,i] = np.log10(sum(10**dens[ind] * mHI[ind]) / sum(mHI[ind]))
+     dens_cnm[2,i] = np.log10(sum(10**dens[ind] * sfr[ind]) / sum(sfr[ind]))
+   
+     dens_cnm_w[0,:,i] = us.weighted_quantile(dens[ind], np.array([0.25,0.50,0.75]), sample_weight=mH2[ind]) #, old_style=True)
+     #print(dens_cnm[0,i], dens_cnm_w[0,1,i]) 
+     dens_cnm_w[1,:,i] = us.weighted_quantile(dens[ind], np.array([0.25,0.50,0.75]), sample_weight=mHI[ind])
+     dens_cnm_w[2,:,i] = us.weighted_quantile(dens[ind], np.array([0.25,0.50,0.75]), sample_weight=sfr[ind])
 
      #now normalise masses and sFRs
      mHI = mHI / sum(mHI)
@@ -192,23 +221,23 @@ for i,z in enumerate(ztarget):
         xtext = xmax - 0.4 * (xmax - xmin)
         ytext = ymax - 0.1 * (ymax - ymin)
         
-        for i,s in enumerate(subplots):
+        for j,s in enumerate(subplots):
             ax = fig.add_subplot(s)
             common.prepare_ax(ax, xmin, xmax, ymin, ymax, xtit, ytit, locators=(1,1,1,1))
         
-            if i == 0:
+            if j == 0:
                 im = ax.hexbin(dens, T, mHI, xscale='linear', yscale='linear', gridsize=(20,20), cmap='Blues', mincnt=1, reduce_C_function = np.sum, bins = 'log', vmin = 1e-6, vmax = 0.1)
                 cbar = fig.colorbar(im, ax = ax, location = 'top', label = 'HI fraction')
                 density_contour(ax, dens, T, 30, 30, cmap = 'Purples_r')
                 ax.text(xtext, ytext, 'Atomic hygroden')
                 plot_ISM_phases(ax, xmin, xmax)
-            if i == 1:
+            if j == 1:
                 im = ax.hexbin(dens, T, mH2, xscale='linear', yscale='linear', gridsize=(20,20), cmap='Oranges', mincnt=1, reduce_C_function = np.sum, bins = 'log', vmin = 1e-6, vmax = 0.1)
                 cbar = fig.colorbar(im, ax = ax, location = 'top', label = 'H$_{2}$ fraction')
                 density_contour(ax, dens, T, 30, 30, cmap = 'Purples_r')
                 ax.text(xtext, ytext, 'Molecular hygroden')
                 plot_ISM_phases(ax, xmin, xmax)
-            if i == 2:
+            if j == 2:
                 im = ax.hexbin(dens, T, sfr, xscale='linear', yscale='linear', gridsize=(20,20), cmap='Greens', mincnt=1, reduce_C_function = np.sum, bins = 'log', vmin = 1e-6, vmax = 0.1)
                 cbar = fig.colorbar(im, ax = ax, location = 'top', label = 'SFR fraction')
                 density_contour(ax, dens, T, 30, 30, cmap = 'Purples_r')
@@ -219,14 +248,33 @@ for i,z in enumerate(ztarget):
        
         common.savefig(outdir, fig, 'Particles_PhaseSpace_HIH2_z' + str(z) + '.pdf')
    
+        ####################### plot all methods at z=0 #########################################
+        min_gas_dens = -2
+        fig = plt.figure(figsize=(5,4))
+        ytit = "density"
+        xtit = "$\\rm log_{10} (\\rm n_{\\rm H,CNM}/cm^{-3})$"
+       
+        xmin, xmax, ymin, ymax = -2, 4, 0, 1
+        ax = fig.add_subplot(111)
+        common.prepare_ax(ax, xmin, xmax, ymin, ymax, xtit, ytit, locators=(1,1,0.2,0.2))
+        ax.plot(xn, hist_cnm_h2[i,:]/sum(hist_cnm_h2[i,:] * dn), linestyle='dashed', color='red', label='H$_2$-weighted')
+        ax.plot(xn, hist_cnm_hi[i,:]/sum(hist_cnm_hi[i,:] * dn), linestyle='dashed', color='blue', label='HI-weighted')
+        ax.plot(xn, hist_cnm_sfr[i,:]/sum(hist_cnm_sfr[i,:] * dn), linestyle='dashed', color='green', label='SFR-weighted')
+        common.prepare_legend(ax, ['red','blue', 'green'], loc = 2)
+
+        plt.tight_layout()
+        print("will save figure", outdir + 'Particles_densityCNM_HIH2_z' + str(z) + '.pdf')
+        common.savefig(outdir, fig, 'Particles_densityCNM_HIH2_z' + str(z) + '.pdf')
+   
+
 
 ############################# mass fraction locked up in different ISM phases ##############################
-fig = plt.figure(figsize=(6,9))
+fig = plt.figure(figsize=(6,12))
 ytit = "Fraction of gas phases in WNM/CNM"
 xtit = "redshift"
 xmin, xmax, ymin, ymax = min(ztarget), max(ztarget), -0.1, 1.1
         
-ax = fig.add_subplot(211)
+ax = fig.add_subplot(311)
 common.prepare_ax(ax, xmin, xmax, ymin, ymax, " ", ytit, locators=(1,1,0.1,0.1))
 
 #ax.plot(ztarget, frac_hi[0,:], linestyle='dotted', color='blue')
@@ -257,7 +305,8 @@ ax.text(0.1,0.39,'HI in CNM', color='blue')
 #common.prepare_legend(ax, ['blue','red', 'green'], loc = 7)
 
 ytit = "Fraction of WNM/CNM in gas phases"
-ax = fig.add_subplot(212)
+ax = fig.add_subplot(312)
+ymax = 0.65
 common.prepare_ax(ax, xmin, xmax, ymin, ymax, xtit, ytit, locators=(1,1,0.1,0.1))
 
 ax.plot(ztarget, frac_wnm[0,:], linestyle='dashed', color='k', label='WNM HI')
@@ -267,14 +316,29 @@ ax.plot(ztarget, frac_cnm[0,:], linestyle='dashed', color='darkorange', label='C
 ax.plot(ztarget, frac_cnm[1,:], linestyle='solid', color='darkorange', label = 'CNM H$_2$')
 
 #common.prepare_legend(ax, ['k','k', 'darkorange', 'darkorange'], loc = 7)
-ax.text(0.1,1.02,'WNM in HI', color='k')
-ax.text(0.1,0.72,'CNM in HI', color='darkorange')
+ax.text(0.1,0.62,'WNM in HI', color='k')
+ax.text(0.1,0.48,'CNM in HI', color='darkorange')
 
 ax.text(0.1,-0.05,'WNM in H$_2$', color='k')
-ax.text(0.1,0.36,'CNM in H$_2$', color='darkorange')
+ax.text(0.1,0.2,'CNM in H$_2$', color='darkorange')
 
 
+ytit = "$\\rm log_{10}(n_{\\rm H,CNM}/cm^{-3})$"
+ax = fig.add_subplot(313)
+ymin, ymax = -1.5, 2.5
+common.prepare_ax(ax, xmin, xmax, ymin, ymax, xtit, ytit, locators=(1,1,0.5,0.5))
 
+#ax.plot(ztarget, dens_cnm[0,:], linestyle='dashed', color='red', label='H$_2$-weighted')
+ax.fill_between(ztarget, dens_cnm_w[0,0,:],  dens_cnm_w[0,2,:], facecolor='red', alpha=0.2)
+ax.plot(ztarget, dens_cnm_w[0,1,:], linestyle='dashed', color='red', label='H$_2$-weighted')
+
+ax.fill_between(ztarget, dens_cnm_w[1,0,:],  dens_cnm_w[1,2,:], facecolor='blue', alpha=0.2)
+ax.plot(ztarget, dens_cnm_w[1,1,:], linestyle='dashed', color='blue', label='HI-weighted')
+
+ax.fill_between(ztarget, dens_cnm_w[2,0,:],  dens_cnm_w[2,2,:], facecolor='green', alpha=0.2)
+ax.plot(ztarget, dens_cnm_w[2,1,:], linestyle='dashed', color='green', label='SFR-weighted')
+
+common.prepare_legend(ax, ['red','blue', 'green'], loc = 3)
 plt.tight_layout()
 
 common.savefig(outdir, fig, 'Fractions_ISMmedia_vs_redshift.pdf')
