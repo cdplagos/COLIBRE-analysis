@@ -13,7 +13,7 @@ salp_to_cha_sfr_halpha = 0.20534/0.1220
 ###
 
 ### define directories and table names
-dir_alma = "/home/clagos/Trabajo/COLIBRE/ALMAQUEST/"
+dir_alma = "ALMAQUEST/"
 
 file_pix_data_sfgs = 'H2smsfrsfessfr_sf.cat.fits'
 file_pix_data_gvgs = 'H2smsfrsfessfr_gv.cat.fits'
@@ -241,28 +241,31 @@ def plot_lines_constant_deptime(ax, xmin, xmax, ymaxplot = 10):
        ax.plot([xmin, xmax], [ymin,ymax], linestyle='dotted', color='grey')
 
 
-
+print("Will produce plot now...")
 fig = plt.figure(figsize=(5,8))
+print("will define axes")
 xtit = "$\\rm log_{10} (\\rm \\Sigma_{\\rm H_{2}}/M_{\\odot}\\, pc^{-2})$",
 ytit = "$\\rm log_{10} (\\rm \\Sigma_{\\rm SFR}/M_{\\odot}\\, yr^{-1}\\, kpc^{-2})$"
 xmin, xmax, ymin, ymax = 0, 2.5, -6, 0.5
 
 subplots = [121, 122]
 
+print("will loop over subplots")
 for i,s in enumerate(subplots):
         ax = fig.add_subplot(s)
-        common.prepare_ax(ax, xmin, xmax, ymin, ymax, xtits, ytits, locators=(0.5, 0.5, 0.5, 0.5))
+        common.prepare_ax(ax, xmin, xmax, ymin, ymax, xtit, ytit, locators=(0.5, 0.5, 0.5, 0.5))
         
         if i == 0:
+            print("will plot SF galaxies")
             im0 = plot_KS_relation_nogradients(ax,n0_sf, sfr_sf, mH2_sf, sigma_H2_sf, sigma_sfr_sf, min_gas_dens = 0)
             common.prepare_legend(ax, ['red','Teal'], loc = 4)
-            plot_lines_constant_deptime(ax, xmin[i], xmax[i], ymaxplot = ymax[i])
+            plot_lines_constant_deptime(ax, xmin, xmax, ymaxplot = ymax)
         
         if i == 1:
+            print("will plot GV galaxies")
             im0 = plot_KS_relation_nogradients(ax,n0_gv, sfr_gv, mH2_gv, sigma_H2_gv, sigma_sfr_gv, min_gas_dens = 0)
             common.prepare_legend(ax, ['Red', 'Red', 'CadetBlue','CornflowerBlue'], loc = 2)
-            plot_lines_constant_deptime(ax, xmin[i], xmax[i], ymaxplot = ymax[i])
-
+            plot_lines_constant_deptime(ax, xmin, xmax, ymaxplot = ymax)
 
 common.savefig(outdir, fig, "ALMAQUEST_matched_KS.pdf")
 
