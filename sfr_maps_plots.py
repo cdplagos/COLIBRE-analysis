@@ -8,8 +8,8 @@ from hyperfit.data import ExampleData
 #define radial bins of interest. This going from 0 to 50kpc, in bins of 1kpc
 dir_data = 'Runs/'
 #model_name = 'L0100N0752/Thermal_non_equilibrium'
-#model_name = 'L0025N0376/Thermal_non_equilibrium'
-model_name = 'L0050N0752/Thermal_non_equilibrium'
+model_name = 'L0025N0376/Thermal_non_equilibrium'
+#model_name = 'L0050N0752/Thermal_non_equilibrium'
 
 #choose the type of profile to be read
 #method = 'spherical_apertures'
@@ -662,6 +662,16 @@ def plot_med_relations_ks_fits(ax, ks_fit_HI, ks_fit_H2, ks_fit_H2_highdens, ks_
         ax.fill_between(x[ind], errdn[0], errup[0], facecolor = cols[j], alpha=0.2, interpolate=True)
         ax.plot(x[ind],yplot[0], linestyle='solid', color=cols[j], label = labels[j] if label else None)
 
+
+def plot_obs_KSfits(ax,slope = True):
+    
+    ms, A0H2, NHH2, A0all, NHall = np.loadtxt("THINGS_data.txt", usecols = [1, 2, 3, 5, 6])
+
+    NHI, NHIerr, A0HI, A0HIerr, mbHI =  np.loadtxt("Roychowdhury_2009_HIKS.txt", usecols = [3, 4, 5, 6, 7])
+
+    #msHI =  
+
+    
 
 def plot_ks_fits_vs_property(ks_fit_HI, ks_fit_H2, ks_fit_H2_highdens, ks_fit_Hneutral, third_prop, property_name='Stellar Mass', label_prop='$\\rm log_{10}(M_{\\star}/M_{\odot})$', xmin = 9, xmax = 12):
     fig = plt.figure(figsize=(10.8,6))
