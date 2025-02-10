@@ -21,20 +21,21 @@ method = 'circular_apertures_face_on_map'
 #################################################################################
 
 ################## select the model and redshift you want #######################
-model_name = 'L0100N0752/Thermal_non_equilibrium/'
+model_name = 'L0100N1504/Thermal_non_equilibrium/'
 #model_name = 'L0050N0752/Thermal_non_equilibrium/'
 #model_name = 'L0025N0376/Thermal_non_equilibrium/'
 model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
 
 #definitions below correspond to z=0
-snap_files = ['0127', '0119', '0114', '0102', '0092', '0076', '0064', '0056', '0048', '0040', '0026', '0018']
-zstarget = [0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0]
+snap_files = ['0127', '0119', '0114', '0102', '0092', '0076', '0064', '0056', '0048', '0040', '0032', '0026', '0018']
+zstarget = [0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0]
+
 
 #snap_files = ['0056', '0048', '0040', '0026', '0018']
 #zstarget = [4.0, 5.0, 6.0, 8.0, 10.0]
 
-#snap_files = ['0123', '0088', '0072', '0060', '0048', '0040'] #, '0026', '0020']
-#zstarget = [0.0, 1.0, 2.0, 3.5, 4.0, 5.0, 6.0] #, 8.0, 10.0]
+#snap_files = ['0123', '0088', '0072', '0064', '0060', '0048', '0040'] #, '0026', '0020']
+#zstarget = [0.0, 1.0, 2.0, 3.0, 3.5, 4.0, 5.0, 6.0] #, 8.0, 10.0]
 
 #################################################################################
 ###################### simulation units #########################################
@@ -96,7 +97,7 @@ def distance_2d_faceon(x,y,z, coord, spin_vec):
 
  
 ##### loop through redshifts ######
-for z in range(0,len(snap_files)):
+for z in range(3,5): #,len(snap_files)):
     snap_file =snap_files[z]
     ztarget = zstarget[z]
     comov_to_physical_length = 1.0 / (1.0 + ztarget)
@@ -175,8 +176,10 @@ for z in range(0,len(snap_files)):
        gal_props[:,15] = ZgasLow_in
        gal_props[:,16] = ZgasHigh_in
        gal_props[:,17] = mdust_in
-       np.savetxt(model_name + 'GalaxyProperties_z' + str(ztarget) + '.txt', gal_props)
-       
+       np.savetxt('Runs/' + model_name + '/ProcessedData/' + 'GalaxyProperties_z' + str(ztarget) + '.txt', gal_props)
+       print("Have saved galaxy properties") 
+       del(gal_props) #releasing memory
+ 
        #initialise profile arrays
        sfr_profile = np.zeros(shape = (ngals, nr))
        mHI_profile = np.zeros(shape = (ngals, nr))
@@ -198,8 +201,9 @@ for z in range(0,len(snap_files)):
  
        ################################# read particle data #####################################################
        fields = {'PartType0': ('GroupNr_bound', 'Coordinates' , 'Masses', 'StarFormationRates', 'Temperatures', 'SpeciesFractions', 'ElementMassFractions', 'ElementMassFractionsDiffuse', 'DustMassFractions', 'Densities')}
+       print("Will read part type 0 properties")
        h5data = common.read_particle_data_colibre(model_dir, snap_file, fields)
-       
+       print("Have read particle 0 properties")
        
        #  SpeciesFractions: "elec", "HI", "HII", "Hm", "HeI", "HeII", "HeIII", "H2", "H2p", "H3p" (for snapshots)
        #  SpeciesFractions: "HI", "HII",  "H2" (snipshots to be confirmed)
@@ -207,16 +211,57 @@ for z in range(0,len(snap_files)):
        
        #SubhaloID is now unique to the whole box, so we only need to match a signel number
        (sgnp, coord, m, sfr, temp, speciesfrac, elementmassfracs, elementmassfracsdiff, DustMassFrac, dens) = h5data
+      
+       del(h5data) #release data
+
+       speciesfrac2 = np.zeros(shape = (len(speciesfrac[:,0]), 2))
+       speciesfrac2[:,0] = speciesfrac[:,1]
+       speciesfrac2[:,1] = speciesfrac[:,7]
+       speciesfrac = speciesfrac2
+       del(speciesfrac2)
+
+       def reduce_dim_elements(elementmassfracs):
+           els = np.zeros(shape = (len(elementmassfracs[:,0]), 3))
+           els[:,0] = elementmassfracs[:,0]
+           els[:,1] = elementmassfracs[:,4]
+           els[:,2] = elementmassfracs[:,8]
+           elementmassfracs = els
+           del(els)
+
+       reduce_dim_elements(elementmassfracs)
+       reduce_dim_elements(elementmassfracsdiff)
+
+       #fields_in = np.isin(sgnp,sgn_in) #find all particles of interest and redefine arrays with only those
+       #sgnp = sgnp[fields_in]
+       #coord = coord[fields_in]
+       #m = m[fields_in]
+       #sfr = sfr[fields_in]
+       #temp = temp[fields_in]
+       #speciesfrac = speciesfrac[fields_in,:]
+       #elementmassfracs = elementmassfracs[fields_in,:]
+       #elementmassfracsdiff = elementmassfracsdiff[fields_in,:]
+       #DustMassFrac = DustMassFrac[fields_in,:]
+       #dens = dens[fields_in]
+       #del(fields_in) #redefine array to release memory
+
        #get the total dust mass fraction by summing over all the dust grains
        DustMassFracTot = DustMassFrac[:,0] + DustMassFrac[:,1] + DustMassFrac[:,2] + DustMassFrac[:,3] + DustMassFrac[:,4] + DustMassFrac[:,5]
-       print(DustMassFracTot.shape)
        
+       np.delete(DustMassFrac)
+       print("Will read part type 4 properties")
        fields = {'PartType4': ('GroupNr_bound', 'Coordinates' , 'Masses')}
        h5data = common.read_particle_data_colibre(model_dir, snap_file, fields)
-   
-       #SubhaloID is now unique to the whole box, so we only need to match a signel number
+       print("Have read particle 4 properties")
+       #SubhaloID is now unique to the whole box, so we only need to match a single number
        (sgnpT4, coordT4, mT4) = h5data
-   
+       del(h5data) #release data
+       #fields_in = np.isin(sgnpT4,sgn_in) #find all particles of interest and redefine arrays with only those
+        
+       #sgnpT4 = sgnpT4[fields_in]
+       #coordT4 = coordT4[fields_in]
+       #mT4 = mT4[fields_in]
+       #del(fields_in) #redefine array to release memory
+
        #units
        coord = coord * Lu * comov_to_physical_length
        m = m * Mu
@@ -224,13 +269,13 @@ for z in range(0,len(snap_files)):
        coordT4 = coordT4 * Lu * comov_to_physical_length
        mT4 = mT4 * Mu
        dens = dens * density_cgs_conv / mH #in cm^-3
-       print(min(dens), max(dens))
        ###########################################################################################################
        ############## now calculate maps of properties and save them ############################################
        
       
        #select particles that belong to the different galaxies
        #loop through galaxies
+       print("Will compute radial profiles")
        for g in range(0,ngals):
            #select particles type 0 with the same Subhalo ID
            partin = np.where(sgnp == sgn_in[g])
@@ -268,8 +313,8 @@ for z in range(0,len(snap_files)):
                          dens_inr = dens_part0[inr]
                          mh_inr = m_part0[inr] * elementmassfracs_part0[inr,0]
                          mhdiff_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,0]
-                         mo_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,4]
-                         mfe_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,8]
+                         mo_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,1]
+                         mfe_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,2]
                          sfr_inr = sfr_part0[inr]
                          #reduce dimensionality
                          mh_inr = mh_inr[0]
@@ -279,15 +324,16 @@ for z in range(0,len(snap_files)):
                          mpart_inr = m_part0[inr]
                          #calculate profiles
                          sfr_profile[g,i] = np.sum(sfr_inr)
-                         mHI_profile[g,i] = np.sum(mh_inr * speciesfrac_part0[inr,1])
-                         mH2_profile[g,i] = np.sum(mh_inr * speciesfrac_part0[inr,7] * 2) #factor 2 comes from H2 being two hydrogen atoms
-                         mdust_profile[g,i] = np.sum(mh_inr * dust_part0[inr])
+                         mHI_profile[g,i] = np.sum(mh_inr * speciesfrac_part0[inr,0])
+                         mH2_profile[g,i] = np.sum(mh_inr * speciesfrac_part0[inr,1] * 2) #factor 2 comes from H2 being two hydrogen atoms
+                         mdust_profile[g,i] = np.sum(mpart_inr * dust_part0[inr])
        
                          coldp = np.where((temp_inr < 10**(4.5)) & (dens_inr > 0)) #select particles with temperatures cooler than 10^4.5K and calculate metallicity profiles with those particles only.
                          if(len(mo_inr[coldp]) > 0):
                             oh_profile[g,i] = np.sum(mo_inr[coldp]) / np.sum(mhdiff_inr[coldp])
                             feh_profile[g,i] = np.sum(mfe_inr[coldp]) / np.sum(mhdiff_inr[coldp])
                             coldgas_profile[g,i] = np.sum(mpart_inr[coldp])
+                         del(temp_inr, dens_inr, mh_inr, mhdiff_inr, mo_inr, mfe_inr, sfr_inr, coldp) #release data
 
               elif (family_method == 'grid'):
                   if(method == 'grid_random_map'):
@@ -299,8 +345,8 @@ for z in range(0,len(snap_files)):
                           dens_inr = dens_part0[inr]
                           mh_inr = m_part0[inr] * elementmassfracs_part0[inr,0]
                           mhdiff_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,0]
-                          mo_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,4]
-                          mfe_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,8]
+                          mo_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,1]
+                          mfe_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,2]
                           speciesfrac_inr = speciesfrac_part0[inr,:]
                           dust_part_inr = dust_part0[inr]
                           #reduce dimensionality
@@ -319,9 +365,9 @@ for z in range(0,len(snap_files)):
                                   #calculate profiles
                                   npart0_profile[g,i * len(gr) + j] = len(dcentre_j_inr[inrj])
                                   sfr_profile[g,i * len(gr) + j] = np.sum(sfr_inr[inrj])
-                                  mHI_profile[g,i * len(gr) + j] = np.sum(mh_inr[inrj] * speciesfrac_inr[inrj,1])
-                                  mH2_profile[g,i * len(gr) + j] = np.sum(mh_inr[inrj] * speciesfrac_inr[inrj,7] * 2) #factor 2 comes from H2 being two hydrogen atoms
-                                  mdust_profile[g,i * len(gr) + j] = np.sum(mh_inr[inrj] * dust_part_inr[inrj])
+                                  mHI_profile[g,i * len(gr) + j] = np.sum(mh_inr[inrj] * speciesfrac_inr[inrj,0])
+                                  mH2_profile[g,i * len(gr) + j] = np.sum(mh_inr[inrj] * speciesfrac_inr[inrj,1] * 2) #factor 2 comes from H2 being two hydrogen atoms
+                                  mdust_profile[g,i * len(gr) + j] = np.sum(mpart_inr[inrj] * dust_part_inr[inrj])
                                   temp_inj = temp_inr[inrj]
                                   dens_inj = dens_inr[inrj]
                                   mh_inj = mhdiff_inr[inrj]
@@ -333,8 +379,10 @@ for z in range(0,len(snap_files)):
                                      oh_profile[g,i * len(gr) + j] = np.sum(mo_inj[coldp]) / np.sum(mh_inj[coldp])
                                      feh_profile[g,i * len(gr) + j] = np.sum(mfe_inj[coldp]) / np.sum(mh_inj[coldp])
                                      coldgas_profile[g,i * len(gr) + j] = np.sum(mpart_inj[coldp])
-                                  
-       
+                                  del(temp_inj,dens_inj,mh_inj,mo_inj,mfe_inj,mpart_inj,coldp)
+                          del(dcentre_i, dcentre_j,temp_inr,dens_inr,mh_inr,mhdiff_inr,mo_inr,mfe_inr,speciesfrac_inr,dust_part_inr,sfr_inr,dcentre_j_inr)        
+              del(m_part0, sfr_part0, temp_part0, dust_part0, elementmassfracs_part0, elementmassfracsdiff_part0, dens_part0, speciesfrac_part0) #release data
+      
            #select particles type 4 with the same Subhalo ID
            partin = np.where(sgnpT4 == sgn_in[g])
            npartingal = len(sgnpT4[partin])
@@ -357,6 +405,7 @@ for z in range(0,len(snap_files)):
                       if(len(dcentre[inr]) > 0):
                           npart4_profile[g,i] = len(dcentre[inr])
                           mstar_profile[g,i] = np.sum(m_part4[inr])
+                  del(dcentre,inr) 
               elif (family_method == 'grid'):
                  if(method == 'grid_random_map'):
                      dcentre_i, dcentre_j = distance_2d_grid_random(x_in[g], y_in[g], coord_in_p4)
@@ -371,20 +420,22 @@ for z in range(0,len(snap_files)):
                                  #calculate profiles
                                  npart4_profile[g,i * len(gr) + j] = len(dcentre_j_inr[inrj])
                                  mstar_profile[g,i * len(gr) + j] = np.sum(mp4_inr[inrj])
+                         del(dcentre_i, dcentre_j,mp4_inr,inr,dcentre_j_inr)
+              del(coord_in_p4,m_part4)
 
   
        #save galaxy profiles
-       np.savetxt(model_name + 'SFR_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", sfr_profile)
-       np.savetxt(model_name + 'MHI_profiles_ap50ckpc_'+ method + "_dr"+ str(dr) + "_z"  + str(ztarget) + ".txt", mHI_profile)
-       np.savetxt(model_name + 'MH2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", mH2_profile)
-       np.savetxt(model_name + 'OH_gas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", oh_profile)
-       np.savetxt(model_name + 'FeH_gas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", feh_profile)
-       np.savetxt(model_name + 'Mstar_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", mstar_profile)
-       np.savetxt(model_name + 'Mdust_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", mdust_profile)
-       np.savetxt(model_name + 'NumberPart0_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", npart0_profile)
-       np.savetxt(model_name + 'NumberPart4_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", npart4_profile)
-       np.savetxt(model_name + 'Mcoldgas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", coldgas_profile)
+       np.savetxt('Runs/' + model_name + '/ProcessedData/' + 'SFR_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", sfr_profile)
+       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'MHI_profiles_ap50ckpc_'+ method + "_dr"+ str(dr) + "_z"  + str(ztarget) + ".txt", mHI_profile)
+       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'MH2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", mH2_profile)
+       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'OH_gas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", oh_profile)
+       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'FeH_gas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", feh_profile)
+       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Mstar_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", mstar_profile)
+       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Mdust_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", mdust_profile)
+       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'NumberPart0_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", npart0_profile)
+       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'NumberPart4_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", npart4_profile)
+       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Mcoldgas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", coldgas_profile)
 
        #save radii info
-       np.savetxt(model_name + 'radii_info_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", r_dist_centre)
+       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'radii_info_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", r_dist_centre)
    
