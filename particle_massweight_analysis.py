@@ -19,11 +19,11 @@ model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
 #snap_files = ['0127', '0119', '0114', '0092', '0064', '0056', '0048', '0040', '0026', '0018']
 #zstarget = [0.0, 0.1, 0.2, 1.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0]
 
-snap_files = ['0123', '0088', '0072', '0060', '0048', '0040'] #, '0026', '0020']
-zstarget = [0.0, 1.0, 2.0, 3.5, 4.0, 5.0, 6.0] #, 8.0, 10.0]
+#snap_files = ['0123', '0088', '0072', '0060', '0048', '0040'] #, '0026', '0020']
+#zstarget = [0.0, 1.0, 2.0, 3.5, 4.0, 5.0, 6.0] #, 8.0, 10.0]
 
-#snap_files = ['0123', '0115',  '0110',  '0106', '0102', '0098', '0096',  '0094', '0092',  '0090', '0088',  '0084', '0080', '0076', '0072', '0068', '0064', '0060', '0052', '0048', '0040']
-#zstarget = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0]
+snap_files = ['0123', '0115',  '0110',  '0106', '0102', '0098', '0096',  '0094', '0092',  '0090', '0088',  '0084', '0080', '0076', '0072', '0068', '0064', '0060', '0056', '0052', '0048', '0044', '0040', '0036', '0032', '0028']
+zstarget = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5]
 
 #snap_files = ['0064', '0060', '0052', '0048', '0040']
 #zstarget = [3.5, 4.0, 4.5, 5.0, 6.0]
@@ -42,7 +42,7 @@ def distance_3d(x,y,z, coord):
     return np.sqrt((coord[:,0]-x)**2 + (coord[:,1] - y)**2 + (coord[:,2] - z)**2)
 
 ##### loop through redshifts ######
-for z in range(3,len(snap_files)):
+for z in range(0,5): #len(snap_files)):
     snap_file =snap_files[z]
     ztarget = zstarget[z]
     comov_to_physical_length = 1.0 / (1.0 + ztarget)
@@ -75,7 +75,7 @@ for z in range(3,len(snap_files)):
     select = np.where((m30 >=3e8) & (sfr30 > 0))
     ngals = len(m30[select])
     if(ngals > 0):
-       print("Number of galaxies of interest", ngals, " at redshift", ztarget)
+       print("Number of galaxies of interest", ngals, " at redshift", ztarget, " at index", z)
        m_in = m30[select]
        sfr_in = sfr30[select]
        sgn_in = sgn[select]
@@ -98,11 +98,14 @@ for z in range(3,len(snap_files)):
        spin_vec_norm = spin_vec_norm[0] #reduce dimensionality
    
        #initialise profile arrays
+       mparts = np.array([])
+       mdustparts = np.array([])
        mHIparts = np.array([])
        mH2parts = np.array([])
        Tparts = np.array([])
        densparts = np.array([])
        sfrparts = np.array([])
+       zgasparts = np.array([])
  
        ################################# read particle data #####################################################
        fields = {'PartType0': ('GroupNr_bound', 'Coordinates' , 'Masses', 'StarFormationRates', 'Temperatures', 'SpeciesFractions', 'ElementMassFractions', 'ElementMassFractionsDiffuse', 'DustMassFractions', 'Densities')}
@@ -143,6 +146,7 @@ for z in range(3,len(snap_files)):
               sfr_part0 = sfr[partin]
               temp_part0 = temp[partin]
               dens_part0 = dens[partin]
+              mdust_part0 = DustMassFracTot[partin]
               speciesfrac_part0 = speciesfrac[partin,:]
               elementmassfracs_part0 = elementmassfracs[partin,:]
               #reduce dimensionality
@@ -153,23 +157,30 @@ for z in range(3,len(snap_files)):
                     temp_inr = temp_part0[inr]
                     dens_inr = dens_part0[inr]
                     sfr_inr = sfr_part0[inr]
+                    m_inr = m_part0[inr] 
                     mh_inr = m_part0[inr] * elementmassfracs_part0[inr,0]
                     mHI_inr = mh_inr * speciesfrac_part0[inr,1]
                     mH2_inr = mh_inr * speciesfrac_part0[inr,7] * 2
+                    zgas_inr = m_part0[inr] * elementmassfracs_part0[inr,4] / mh_inr
+                    mdust_inr = mdust_part0[inr] * m_inr
+                    mparts = np.append(mparts, m_inr)
                     mHIparts = np.append(mHIparts, mHI_inr)
                     mH2parts = np.append(mH2parts, mH2_inr)
                     Tparts = np.append(Tparts, temp_inr)
                     densparts = np.append(densparts,dens_inr)
                     sfrparts = np.append(sfrparts,sfr_inr)
-
+                    zgasparts = np.append(zgasparts,zgas_inr)
+                    mdustparts = np.append(mdustparts, mdust_inr)
        print(mHIparts.shape)
-       part_allprops = np.zeros(shape = (5,len(mHIparts)))
+       part_allprops = np.zeros(shape = (8,len(mHIparts)))
        part_allprops[0,:] = mHIparts
        part_allprops[1,:] = mH2parts
        part_allprops[2,:] = Tparts
        part_allprops[3,:] = densparts
        part_allprops[4,:] = sfrparts
-
+       part_allprops[5,:] = zgasparts
+       part_allprops[6,:] = mparts
+       part_allprops[7,:] = mdustparts
 
        #save particle profiles
        np.savetxt(model_name + 'particles_ap50ckpc_z' + str(ztarget) + ".txt", part_allprops)
