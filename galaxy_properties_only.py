@@ -21,20 +21,20 @@ method = 'circular_apertures_face_on_map'
 #################################################################################
 
 ################## select the model and redshift you want #######################
-model_name = 'L0100N0752/Thermal_non_equilibrium/'
+#model_name = 'L0100N0752/Thermal_non_equilibrium/'
 #model_name = 'L0050N0752/Thermal_non_equilibrium/'
-#model_name = 'L0025N0376/Thermal_non_equilibrium/'
+model_name = 'L0025N0376/Thermal/'
 model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
 
 #definitions below correspond to z=0
-snap_files = ['0127', '0119', '0114', '0102', '0092', '0076', '0064', '0056', '0048', '0040', '0026', '0018']
-zstarget = [0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0]
+#snap_files = ['0127', '0119', '0114', '0102', '0092', '0076', '0064', '0056', '0048', '0040', '0026', '0018']
+#zstarget = [0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0]
 
 #snap_files = ['0056', '0048', '0040', '0026', '0018']
 #zstarget = [4.0, 5.0, 6.0, 8.0, 10.0]
 
-#snap_files = ['0123', '0088', '0072', '0060', '0048', '0040'] #, '0026', '0020']
-#zstarget = [0.0, 1.0, 2.0, 3.5, 4.0, 5.0, 6.0] #, 8.0, 10.0]
+snap_files = ['0123', '0088', '0072', '0060', '0048', '0040'] #, '0026', '0020']
+zstarget = [0.0, 1.0, 2.0, 3.5, 4.0, 5.0, 6.0] #, 8.0, 10.0]
 
 #################################################################################
 ###################### simulation units #########################################
@@ -104,7 +104,7 @@ for z in range(0,len(snap_files)):
     ################# read galaxy properties #########################################
     #fields_fof = /SOAP/HostHaloIndex, 
     #/InputHalos/HBTplus/HostFOFId
-    fields_sgn = {'InputHalos': ('HaloCatalogueIndex', 'IsCentral')} 
+    fields_sgn = {'InputHalos': ('HaloCatalogueIndex', 'IsCentral', 'HBTplus/DescendantTrackId', 'HBTplus/TrackId')} 
     fields ={'ExclusiveSphere/30kpc': ('StellarMass', 'StarFormationRate', 'HalfMassRadiusStars', 'CentreOfMass', 'AtomicHydrogenMass', 'MolecularHydrogenMass', 'KappaCorotStars', 'KappaCorotGas', 'DiscToTotalStellarMassFraction', 'SpinParameter', 'MassWeightedMeanStellarAge', 'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasLowLimit' ,'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasHighLimit', 'AngularMomentumStars', 'DustLargeGrainMass', 'DustSmallGrainMass')}
     h5data_groups = common.read_group_data_colibre(model_dir, snap_file, fields)
     h5data_idgroups = common.read_group_data_colibre(model_dir, snap_file, fields_sgn)
@@ -121,7 +121,7 @@ for z in range(0,len(snap_files)):
     cp = cp * Lu * comov_to_physical_length
     Jstars = Jstars * Mu / (Lu * comov_to_physical_length)**2 / tu
     
-    (sgn, is_central) = h5data_idgroups
+    (sgn, is_central, desc_id, track_id) = h5data_idgroups
     xg = cp[:,0]
     yg = cp[:,1]
     zg = cp[:,2]
@@ -154,7 +154,7 @@ for z in range(0,len(snap_files)):
        mdust_in = mdust[select]
    
        #save galaxy properties of interest
-       gal_props = np.zeros(shape = (ngals, 18))
+       gal_props = np.zeros(shape = (ngals, 20))
        gal_props[:,0] = sgn_in
        gal_props[:,1] = is_central_in
        gal_props[:,2] = x_in
@@ -173,6 +173,9 @@ for z in range(0,len(snap_files)):
        gal_props[:,15] = ZgasLow_in
        gal_props[:,16] = ZgasHigh_in
        gal_props[:,17] = mdust_in
-       np.savetxt(model_name + 'GalaxyProperties_z' + str(ztarget) + '.txt', gal_props)
+       gal_props[:,18] = desc_id[select]
+       gal_props[:,19] = track_id[select]
+
+       np.savetxt('Runs/' + model_name + 'GalaxyProperties_z' + str(ztarget) + '.txt', gal_props)
        
    
