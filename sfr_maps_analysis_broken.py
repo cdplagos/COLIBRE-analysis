@@ -22,10 +22,12 @@ method = 'circular_apertures_face_on_map'
 
 ################## select the model and redshift you want #######################
 #model_name = 'L0100N1504/Thermal/'
-#model_name = 'L0050N0752/Thermal_non_equilibrium/'
+#model_name = 'L0050N0752/Thermal/'
 model_name = 'L0025N0376/Thermal/'
 #model_name = 'L0025N0188/Thermal/'
-#model_name = 'L0025N0752/THERMAL_AGN_m5'
+#model_name = 'L0025N0752/Thermal/'
+#model_name = 'L200_m6/Thermal/'
+
 model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
 
 sm_limit = 1e9
@@ -46,13 +48,18 @@ sm_limit = 1e9
 #snap_type = [True,True,True,True,True,True,True,True]
 
 
-#snap_files = ['0056', '0048', '0040', '0026', '0018']
-#zstarget = [4.0, 5.0, 6.0, 8.0, 10.0]
+#snap_files = ['0040', '0026', '0018']
+#zstarget = [6.0, 8.0, 10.0]
+#snap_type = [True,True,True]
 
 snap_files = ['0123', '0088', '0072', '0064', '0060', '0048', '0040'] #, '0026', '0020']
 zstarget = [0.0, 1.0, 2.0, 3.0, 3.5, 4.0, 5.0, 6.0] #, 8.0, 10.0]
 snap_type = [True,True,True,True,True,True,True,True]
 
+
+#snap_files = ['0102', '0092', '0076', '0064', '0056', '0048', '0040', '0026', '0018']
+#zstarget = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0]
+#snap_type = [True,True,True,True,True,True,True,True,True]
 #################################################################################
 ###################### simulation units #########################################
 Lu = 3.086e+24/(3.086e+24) #cMpc
@@ -121,7 +128,7 @@ def v_z_dir(v,spin):
     return vz
  
 ##### loop through redshifts ######
-for z in range(0,len(snap_files)):
+for z in range(0,1): # 7,len(snap_files)):
     snap_file =snap_files[z]
     ztarget = zstarget[z]
     comov_to_physical_length = 1.0 / (1.0 + ztarget)
@@ -130,10 +137,13 @@ for z in range(0,len(snap_files)):
     #fields_fof = /SOAP/HostHaloIndex, 
     #/InputHalos/HBTplus/HostFOFId
     fields_sgn = {'InputHalos': ('HaloCatalogueIndex', 'IsCentral')} 
-    fields ={'ExclusiveSphere/30kpc': ('StellarMass', 'StarFormationRate', 'HalfMassRadiusStars', 'CentreOfMass', 'AtomicHydrogenMass', 'MolecularHydrogenMass', 'KappaCorotStars', 'KappaCorotGas', 'DiscToTotalStellarMassFraction', 'MassWeightedMeanStellarAge', 'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasLowLimit' ,'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasHighLimit', 'AngularMomentumStars', 'DustLargeGrainMass', 'DustSmallGrainMass', 'CentreOfMassVelocity')}
+    fields ={'ExclusiveSphere/50kpc': ('StellarMass', 'StarFormationRate', 'HalfMassRadiusStars', 'AtomicHydrogenMass', 'MolecularHydrogenMass', 'KappaCorotStars', 'KappaCorotGas', 'DiscToTotalStellarMassFraction', 'MassWeightedMeanStellarAge', 'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasLowLimit' ,'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasHighLimit', 'AngularMomentumStars', 'DustLargeGrainMass', 'DustSmallGrainMass', 'CentreOfMass', 'MostMassiveBlackHoleVelocity')}
+    fields_cen ={'BoundSubhalo' : ('CentreOfMass','MostMassiveBlackHoleVelocity')}
     h5data_groups = common.read_group_data_colibre(model_dir, snap_file, fields)
+    h5data_cen = common.read_group_data_colibre(model_dir, snap_file, fields_cen)
     h5data_idgroups = common.read_group_data_colibre(model_dir, snap_file, fields_sgn)
-    (m30, sfr30, r50, cp, mHI, mH2, kappacostar, kappacogas, disctotot, stellarage, ZgasLow, ZgasHigh, Jstars, mdustl, mdusts, v_at_cp) = h5data_groups
+    (m30, sfr30, r50, mHI, mH2, kappacostar, kappacogas, disctotot, stellarage, ZgasLow, ZgasHigh, Jstars, mdustl, mdusts, cp, v_at_cp) = h5data_groups
+    #(cp, v_at_cp) = h5data_cen
 
     #unit conversion
     mdust = (mdustl + mdusts) * Mu
@@ -179,6 +189,7 @@ for z in range(0,len(snap_files)):
        mdust_in = mdust[select]
        v_at_cp = v_at_cp[select,:]
        v_at_cp = v_at_cp[0]
+       print(v_at_cp.shape, v_at_cp[0,:])
        Jstars_in = Jstars_in[0]
        Jstars_in_norm = np.sqrt(Jstars_in[:,0]**2 + Jstars_in[:,1]**2 + Jstars_in[:,2]**2)
        spin_vec_norm = np.zeros(shape= (ngals,3)) 
@@ -226,6 +237,13 @@ for z in range(0,len(snap_files)):
        disp_HI_profile = np.zeros(shape = (ngals, nr))
        disp_H2_profile = np.zeros(shape = (ngals, nr))
        disp_cool_profile = np.zeros(shape = (ngals, nr))
+       disp_HI_profile_h5 = np.zeros(shape = (ngals, nr))
+       disp_H2_profile_h5 = np.zeros(shape = (ngals, nr))
+       disp_cool_profile_h5 = np.zeros(shape = (ngals, nr))
+       disp_HI_profile_h10 = np.zeros(shape = (ngals, nr))
+       disp_H2_profile_h10 = np.zeros(shape = (ngals, nr))
+       disp_cool_profile_h10 = np.zeros(shape = (ngals, nr))
+
        r_dist_centre = np.zeros(shape = nr) 
        if (family_method == 'radial_profiles'):
             r_dist_centre = xr
@@ -319,7 +337,8 @@ for z in range(0,len(snap_files)):
        (sgnpT4, coordT4, mT4, vT4) = h5data
        del(h5data) #release data
        #fields_in = np.isin(sgnpT4,sgn_in) #find all particles of interest and redefine arrays with only those
-        
+       print("Mean x velocity for gas and stars (should be ~0):", np.mean(v[:,0]), np.mean(vT4[:,0]))
+       
        #sgnpT4 = sgnpT4[fields_in]
        #coordT4 = coordT4[fields_in]
        #mT4 = mT4[fields_in]
@@ -343,6 +362,19 @@ for z in range(0,len(snap_files)):
 
            #select particles type 4 with the same Subhalo ID
            partin4 = np.where(sgnpT4 == sgn_in[g])
+           npartingalT4 = len(sgnpT4[partin4])
+           if(npartingalT4 > 0):
+              coord_in_p4 = coordT4[partin4,:]
+              coord_in_p4 = coord_in_p4[0]
+              vT4_in = vT4[partin4,:]
+              vT4_in = vT4_in[0]
+              m_part4 = mT4[partin4]
+              #compute mean velocity with all stellar particles within 1kpc.
+              dcentre_3d_T4 =  distance_3d(x_in[g], y_in[g], z_in[g], coord_in_p4)
+              in1kpc = np.where(dcentre_3d_T4 <= 1e-3)
+              vgx = np.mean(vT4_in[in1kpc,0])
+              vgy = np.mean(vT4_in[in1kpc,1])
+              vgz = np.mean(vT4_in[in1kpc,2])
            #select particles type 0 with the same Subhalo ID
            partin = np.where(sgnp == sgn_in[g])
            npartingal = len(sgnp[partin])
@@ -357,6 +389,7 @@ for z in range(0,len(snap_files)):
                       dcentre = distance_2d_random(x_in[g], y_in[g], coord_in_p0)
                   elif (method == 'circular_apertures_face_on_map'):
                       dcentre, dheight = distance_2d_faceon(x_in[g], y_in[g], z_in[g], coord_in_p0, spin_vec_norm[g,:])
+
               #define vectors with mass and SFR of particles
               m_part0 = m[partin]
               sfr_part0 = sfr[partin]
@@ -372,11 +405,18 @@ for z in range(0,len(snap_files)):
               elementmassfracsdiff_part0 = elementmassfracsdiff_part0[0]
               speciesfrac_part0 = speciesfrac_part0[0]
               v_part0 = v_part0[0]
-              #move velocities to the reference frame of the galaxy
-              v_part0[:,0] = v_part0[:,0] - np.mean(v_part0[:,0]) #v_at_cp[g,0]
-              v_part0[:,1] = v_part0[:,1] - np.mean(v_part0[:,1]) #v_at_cp[g,1]
-              v_part0[:,2] = v_part0[:,2] - np.mean(v_part0[:,2]) #v_at_cp[g,2]
-              
+              #move velocities to the reference frame of the galaxy, but first compute the frame with cold gas within 5kpc of the centre
+              in5kpc = np.where((dcentre < 5e-3) & (temp_part0 < 1e4))
+              vgx = np.mean(v_part0[in5kpc,0])
+              vgy = np.mean(v_part0[in5kpc,1])
+              vgz = np.mean(v_part0[in5kpc,2])
+              print("residual velocities:", vgx-v_at_cp[g,0], vgy-v_at_cp[g,1], vgz-v_at_cp[g,2])
+
+              v_part0[:,0] = v_part0[:,0] - vgx #v_at_cp[g,0] #np.mean(v_part0[:,0]) #
+              v_part0[:,1] = v_part0[:,1] - vgy #v_at_cp[g,1] #np.mean(v_part0[:,1]) #
+              v_part0[:,2] = v_part0[:,2] - vgz #v_at_cp[g,2] #np.mean(v_part0[:,2]) #
+              print("Mean x velocity (should be ~0):", np.mean(v_part0[:,0]), " mean distance in kpc", np.mean(coord_in_p0[:,0]))
+ 
               if (family_method == 'radial_profiles'):
                   for i,r in enumerate(xr):
                       inr = np.where((dcentre >= (r - dr/2)*1e-3) & (dcentre < (r + dr/2)*1e-3))
@@ -406,14 +446,18 @@ for z in range(0,len(snap_files)):
                          mH2_profile[g,i] = np.sum(mh_inr * speciesfrac_part0[inr,1] * 2) #factor 2 comes from H2 being two hydrogen atoms
                          mdust_profile[g,i] = np.sum(mpart_inr * dust_part0[inr])
                          dheight_inr = dheight[inr]
+                         disp_H2_profile[g,i] = np.sqrt(np.sum(mh2_partin * vr_inr**2) / mH2_profile[g,i])
+                         disp_HI_profile[g,i] = np.sqrt(np.sum(mhi_partin * vr_inr**2) / mHI_profile[g,i])
                          if(method == 'circular_apertures_face_on_map'):
-                            inh = np.where(dheight_inr <= 3.0 * 1e-3) #within 3kpc from the disk plane
+                            inh = np.where(abs(dheight_inr )<= 1e-2) #within 10kpc from the disk plane
                             if(len(mh2_partin[inh]) > 0):
-                               disp_H2_profile[g,i] = np.sqrt(np.sum(mh2_partin[inh] * vr_inr[inh]**2) / np.sum(mh2_partin[inh]))
-                               disp_HI_profile[g,i] = np.sqrt(np.sum(mhi_partin[inh] * vr_inr[inh]**2) / np.sum(mhi_partin[inh]))
-                         else:
-                            disp_H2_profile[g,i] = np.sqrt(np.sum(mh2_partin * vr_inr**2) / mH2_profile[g,i])
-                            disp_HI_profile[g,i] = np.sqrt(np.sum(mhi_partin * vr_inr**2) / mHI_profile[g,i])
+                               disp_H2_profile_h10[g,i] = np.sqrt(np.sum(mh2_partin[inh] * vr_inr[inh]**2) / np.sum(mh2_partin[inh]))
+                               disp_HI_profile_h10[g,i] = np.sqrt(np.sum(mhi_partin[inh] * vr_inr[inh]**2) / np.sum(mhi_partin[inh]))
+                            inh = np.where(abs(dheight_inr )<= 5e-3) #within 10kpc from the disk plane
+                            if(len(mh2_partin[inh]) > 0):
+                               disp_H2_profile_h5[g,i] = np.sqrt(np.sum(mh2_partin[inh] * vr_inr[inh]**2) / np.sum(mh2_partin[inh]))
+                               disp_HI_profile_h5[g,i] = np.sqrt(np.sum(mhi_partin[inh] * vr_inr[inh]**2) / np.sum(mhi_partin[inh]))
+
                          coldp = np.where((temp_inr < 10**(4.5)) & (dens_inr > 0)) #select particles with temperatures cooler than 10^4.5K and calculate metallicity profiles with those particles only.
                          if(len(mo_inr[coldp]) > 0):
                             mhdiff_inr_cold = mhdiff_inr[coldp]
@@ -423,12 +467,16 @@ for z in range(0,len(snap_files)):
                             feh_profile[g,i] = np.sum(mfe_inr[coldp]) / np.sum(mhdiff_inr_cold)
                             coldgas_profile[g,i] = np.sum(mpart_inr[coldp])
                             npart0_cold_profile[g,i] = len(mo_inr[coldp]) 
+                            disp_cool_profile[g,i] = np.sqrt(np.sum(mhdiff_inr_cold * vr_inr_cold**2) / np.sum(mhdiff_inr_cold))
+
                             if(method == 'circular_apertures_face_on_map'):
-                               inh = np.where(dheight_cold <= 3.0 * 1e-3) #within 3kpc from the disk plane
+                               inh = np.where(abs(dheight_cold) <= 1e-2) #within 10kpc from the disk plane
                                if(len(dheight_cold[inh]) > 0):
-                                    disp_cool_profile[g,i] = np.sqrt(np.sum(mhdiff_inr_cold[inh] * vr_inr_cold[inh]**2) / np.sum(mhdiff_inr_cold[inh]))
-                            else:
-                               disp_cool_profile[g,i] = np.sqrt(np.sum(mhdiff_inr_cold * vr_inr_cold**2) / np.sum(mhdiff_inr_cold))
+                                    disp_cool_profile_h10[g,i] = np.sqrt(np.sum(mhdiff_inr_cold[inh] * vr_inr_cold[inh]**2) / np.sum(mhdiff_inr_cold[inh]))
+                               inh = np.where(abs(dheight_cold) <= 5e-3) #within 5kpc from the disk plane
+                               if(len(dheight_cold[inh]) > 0):
+                                    disp_cool_profile_h5[g,i] = np.sqrt(np.sum(mhdiff_inr_cold[inh] * vr_inr_cold[inh]**2) / np.sum(mhdiff_inr_cold[inh]))
+
                          del(temp_inr, dens_inr, mh_inr, mhdiff_inr, mo_inr, mfe_inr, sfr_inr, coldp) #release data
 
               elif (family_method == 'grid'):
@@ -479,10 +527,7 @@ for z in range(0,len(snap_files)):
                           del(dcentre_i, dcentre_j,temp_inr,dens_inr,mh_inr,mhdiff_inr,mo_inr,mfe_inr,speciesfrac_inr,dust_part_inr,sfr_inr,dcentre_j_inr)        
               del(m_part0, sfr_part0, temp_part0, dust_part0, elementmassfracs_part0, elementmassfracsdiff_part0, dens_part0, speciesfrac_part0) #release data
       
-           npartingal = len(sgnpT4[partin4])
-           if(npartingal > 0):
-              coord_in_p4 = coordT4[partin4,:]
-              coord_in_p4 = coord_in_p4[0]
+           if(npartingalT4 > 0):
               if (family_method == 'radial_profiles'):
                    #calculate distance between particle and centre of potential
                    if (method == 'spherical_apertures'):
@@ -490,9 +535,7 @@ for z in range(0,len(snap_files)):
                    elif (method == 'circular_apertures_random_map'):
                        dcentre = distance_2d_random(x_in[g], y_in[g], coord_in_p4)
                    elif (method == 'circular_apertures_face_on_map'):
-                       dcentre = distance_2d_faceon(x_in[g], y_in[g], z_in[g], coord_in_p4, spin_vec_norm[g,:])
-              #define vectors with mass and SFR of particles
-              m_part4 = mT4[partin4]
+                       dcentre, dheight = distance_2d_faceon(x_in[g], y_in[g], z_in[g], coord_in_p4, spin_vec_norm[g,:])
               if (family_method == 'radial_profiles'):
                   for i,r in enumerate(xr):
                       inr = np.where((dcentre >= (r - dr/2)*1e-3) & (dcentre < (r + dr/2)*1e-3) & (m_part4 > 0))
@@ -532,7 +575,14 @@ for z in range(0,len(snap_files)):
        np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_HI_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_HI_profile)
        np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_H2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_H2_profile)
        np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_Cool_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_cool_profile)
-
+       if(method == 'circular_apertures_face_on_map'):
+           np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_HI_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_HI_profile_h10)
+           np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_H2_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_H2_profile_h10)
+           np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_Cool_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_cool_profile_h10)
+           np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_HI_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_HI_profile_h5)
+           np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_H2_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_H2_profile_h5)
+           np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_Cool_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_cool_profile_h5)
+   
        #save radii info
        np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'radii_info_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", r_dist_centre)
    

@@ -23,18 +23,23 @@ method = 'circular_apertures_face_on_map'
 ################## select the model and redshift you want #######################
 #model_name = 'L0100N0752/Thermal_non_equilibrium/'
 #model_name = 'L0050N0752/Thermal_non_equilibrium/'
-model_name = 'L0025N0376/Thermal/'
+#model_name = 'L0025N0376/Thermal/'
+model_name = 'L200_m6/Thermal/'
+
 model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
 
 #definitions below correspond to z=0
 #snap_files = ['0127', '0119', '0114', '0102', '0092', '0076', '0064', '0056', '0048', '0040', '0026', '0018']
 #zstarget = [0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0]
 
+snap_files = ['0102', '0092', '0076', '0064', '0056', '0048', '0040', '0026', '0018']
+zstarget = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0]
+
 #snap_files = ['0056', '0048', '0040', '0026', '0018']
 #zstarget = [4.0, 5.0, 6.0, 8.0, 10.0]
 
-snap_files = ['0123', '0088', '0072', '0060', '0048', '0040'] #, '0026', '0020']
-zstarget = [0.0, 1.0, 2.0, 3.5, 4.0, 5.0, 6.0] #, 8.0, 10.0]
+#snap_files = ['0123', '0088', '0072', '0060', '0048', '0040'] #, '0026', '0020']
+#zstarget = [0.0, 1.0, 2.0, 3.5, 4.0, 5.0, 6.0] #, 8.0, 10.0]
 
 #################################################################################
 ###################### simulation units #########################################
@@ -105,10 +110,10 @@ for z in range(0,len(snap_files)):
     #fields_fof = /SOAP/HostHaloIndex, 
     #/InputHalos/HBTplus/HostFOFId
     fields_sgn = {'InputHalos': ('HaloCatalogueIndex', 'IsCentral', 'HBTplus/DescendantTrackId', 'HBTplus/TrackId')} 
-    fields ={'ExclusiveSphere/30kpc': ('StellarMass', 'StarFormationRate', 'HalfMassRadiusStars', 'CentreOfMass', 'AtomicHydrogenMass', 'MolecularHydrogenMass', 'KappaCorotStars', 'KappaCorotGas', 'DiscToTotalStellarMassFraction', 'SpinParameter', 'MassWeightedMeanStellarAge', 'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasLowLimit' ,'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasHighLimit', 'AngularMomentumStars', 'DustLargeGrainMass', 'DustSmallGrainMass')}
+    fields ={'ExclusiveSphere/50kpc': ('StellarMass', 'StarFormationRate', 'HalfMassRadiusStars', 'CentreOfMass', 'AtomicHydrogenMass', 'MolecularHydrogenMass', 'KappaCorotStars', 'KappaCorotGas', 'DiscToTotalStellarMassFraction', 'MassWeightedMeanStellarAge', 'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasLowLimit' ,'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasHighLimit', 'AngularMomentumStars', 'DustLargeGrainMass', 'DustSmallGrainMass')}
     h5data_groups = common.read_group_data_colibre(model_dir, snap_file, fields)
     h5data_idgroups = common.read_group_data_colibre(model_dir, snap_file, fields_sgn)
-    (m30, sfr30, r50, cp, mHI, mH2, kappacostar, kappacogas, disctotot, spin, stellarage, ZgasLow, ZgasHigh, Jstars, mdustl, mdusts) = h5data_groups
+    (m30, sfr30, r50, cp, mHI, mH2, kappacostar, kappacogas, disctotot, stellarage, ZgasLow, ZgasHigh, Jstars, mdustl, mdusts) = h5data_groups
 
     #unit conversion
     mdust = (mdustl + mdusts) * Mu
@@ -143,7 +148,6 @@ for z in range(0,len(snap_files)):
        kappacostar_in = kappacostar[select]
        kappacogas_in = kappacogas[select]
        disctotot_in = disctotot[select]
-       spin_in = spin[select]
        stellarage_in = stellarage[select]
        ZgasLow_in = ZgasLow[select]
        ZgasHigh_in = ZgasHigh[select]
@@ -151,6 +155,8 @@ for z in range(0,len(snap_files)):
        y_in = yg[select]
        z_in = zg[select]
        Jstars_in = Jstars[select, :]
+       Jstars_in = Jstars_in[0]
+       Jstars_in_norm = np.sqrt(Jstars_in[:,0]**2 + Jstars_in[:,1]**2 + Jstars_in[:,2]**2)
        mdust_in = mdust[select]
    
        #save galaxy properties of interest
@@ -168,7 +174,7 @@ for z in range(0,len(snap_files)):
        gal_props[:,10] = kappacostar_in
        gal_props[:,11] = kappacogas_in
        gal_props[:,12] = disctotot_in
-       gal_props[:,13] = spin_in
+       gal_props[:,13] = Jstars_in_norm
        gal_props[:,14] = stellarage_in
        gal_props[:,15] = ZgasLow_in
        gal_props[:,16] = ZgasHigh_in
