@@ -32,8 +32,8 @@ model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
 #snap_files = ['0127', '0119', '0114', '0102', '0092', '0076', '0064', '0056', '0048', '0040', '0026', '0018']
 #zstarget = [0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0]
 
-snap_files = ['0102', '0092', '0076', '0064', '0056', '0048', '0040', '0026', '0018']
-zstarget = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0]
+snap_files = ['0102', '0092', '0076', '0064', '0056', '0048', '0040', '0032', '0026', '0018']
+zstarget = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0]
 
 #snap_files = ['0056', '0048', '0040', '0026', '0018']
 #zstarget = [4.0, 5.0, 6.0, 8.0, 10.0]
@@ -101,7 +101,7 @@ def distance_2d_faceon(x,y,z, coord, spin_vec):
 
  
 ##### loop through redshifts ######
-for z in range(0,len(snap_files)):
+for z in range(7,8): #0,len(snap_files)):
     snap_file =snap_files[z]
     ztarget = zstarget[z]
     comov_to_physical_length = 1.0 / (1.0 + ztarget)
@@ -182,6 +182,6 @@ for z in range(0,len(snap_files)):
        gal_props[:,18] = desc_id[select]
        gal_props[:,19] = track_id[select]
 
-       np.savetxt('Runs/' + model_name + 'GalaxyProperties_z' + str(ztarget) + '.txt', gal_props)
+       np.savetxt('Runs/' + model_name + '/ProcessedData/GalaxyProperties_z' + str(ztarget) + '.txt', gal_props)
        
    

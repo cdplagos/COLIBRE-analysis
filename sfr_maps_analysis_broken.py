@@ -1,20 +1,19 @@
 
 import math
-
 import numpy as np
-
+from scipy.spatial.transform import Rotation as R
 import common
 #import utilities_statistics as us
 
 
 ###### choose what kind of profiles you want (choose one only) ##################
-family_method = 'radial_profiles'
-method = 'circular_apertures_face_on_map'
+#family_method = 'radial_profiles'
+#method = 'circular_apertures_face_on_map'
 #method = 'circular_apertures_random_map'
 #method = 'spherical_apertures'
 
-#family_method = 'grid'
-#method = 'grid_face_on_map' #to be coded
+family_method = 'grid'
+method = 'grid_face_on_map' 
 #method = 'grid_random_map'
 #method = 'voronoi_maps'  #to be coded
 
@@ -74,7 +73,7 @@ mH = 1.6735575e-24 #in gr
 #define radial bins of interest. This going from 0 to 50kpc, in bins of 1kpc
 rmax = 50
 rmin = 0
-dr = 1.0
+dr = 1.5
 rbins = np.arange(rmin, rmax, dr)
 xr = rbins + dr/2.0 
 nr = len(xr) #number of radial bins
@@ -98,6 +97,41 @@ def distance_2d_random(x,y, coord):
 def distance_2d_grid_random(x,y, coord):
     return (coord[:,0]-x), (coord[:,1] - y)
 
+def distance_2d_grid_face(x, y, z, coord, spin_vec):
+   
+    coordin = coord
+    #centre particles first
+    coordin[:,0] = coordin[:,0] - x
+    coordin[:,1] = coordin[:,1] - y
+    coordin[:,2] = coordin[:,2] - z
+
+    #calculate magnitude of vectors. 
+    magpos = np.sqrt(coordin[:,0]**2 + coordin[:,1]**2 +coordin[:,2]**2)
+
+    #I need to choose a vector that gives me a dot product =0 with the spin (perpendicular to the spin).
+    #I will select all star particles that have a dot product close to 0 and choose any of the randomly to define the viewing angle.
+    costhetapos=(coordin[:,0] * spin_vec[0] + coordin[:,1] * spin_vec[1] + coordin[:,2] * spin_vec[2]) / magpos[:]
+    #select particle that is the closest to perpendicular to the spin:
+    plane = np.where(abs(costhetapos) == min(abs(costhetapos))) #make sure cosine is as small as it can be
+    VecObs = coordin[plane[0],:] / magpos[plane[0]]
+    print(VecObs.shape)
+    VecObs = VecObs[0]
+    vectorplane = np.zeros(shape = 3)
+    vectorplane[0] = (VecObs[1]*spin_vec[2] - VecObs[2]*spin_vec[1])
+    vectorplane[1] = (VecObs[2]*spin_vec[0] - VecObs[0]*spin_vec[2])
+    vectorplane[2] = (VecObs[0]*spin_vec[1] - VecObs[1]*spin_vec[0])
+
+    #make sure plane vector is normalised
+    normvec = np.sqrt(vectorplane[0]**2 + vectorplane[1]**2 + vectorplane[2]**2)
+    vectorplane[:] = vectorplane[:] / normvec
+    #calculate angle between position vectors and vectorplane, and between velocity and view vector
+    costhetaplane = (vectorplane[0] * coordin[:,0] + vectorplane[1] * coordin[:,1] + vectorplane[2] * coordin[:,2]) / magpos[:]
+
+    #calculate positions y and x as detailed above.
+    xnew = magpos * costhetaplane
+    ynew = magpos * costhetapos
+   
+    return xnew, ynew
 
 def distance_2d_faceon(x,y,z, coord, spin_vec):
     cross_prod = np.zeros(shape = (len(coord[:,0]), 3))
@@ -389,7 +423,9 @@ for z in range(0,1): # 7,len(snap_files)):
                       dcentre = distance_2d_random(x_in[g], y_in[g], coord_in_p0)
                   elif (method == 'circular_apertures_face_on_map'):
                       dcentre, dheight = distance_2d_faceon(x_in[g], y_in[g], z_in[g], coord_in_p0, spin_vec_norm[g,:])
-
+              elif (family_method == 'grid'):
+                  dcentre =  distance_3d(x_in[g], y_in[g], z_in[g], coord_in_p0)
+ 
               #define vectors with mass and SFR of particles
               m_part0 = m[partin]
               sfr_part0 = sfr[partin]
@@ -445,10 +481,10 @@ for z in range(0,1): # 7,len(snap_files)):
                          mHI_profile[g,i] = np.sum(mh_inr * speciesfrac_part0[inr,0])
                          mH2_profile[g,i] = np.sum(mh_inr * speciesfrac_part0[inr,1] * 2) #factor 2 comes from H2 being two hydrogen atoms
                          mdust_profile[g,i] = np.sum(mpart_inr * dust_part0[inr])
-                         dheight_inr = dheight[inr]
                          disp_H2_profile[g,i] = np.sqrt(np.sum(mh2_partin * vr_inr**2) / mH2_profile[g,i])
                          disp_HI_profile[g,i] = np.sqrt(np.sum(mhi_partin * vr_inr**2) / mHI_profile[g,i])
                          if(method == 'circular_apertures_face_on_map'):
+                            dheight_inr = dheight[inr]
                             inh = np.where(abs(dheight_inr )<= 1e-2) #within 10kpc from the disk plane
                             if(len(mh2_partin[inh]) > 0):
                                disp_H2_profile_h10[g,i] = np.sqrt(np.sum(mh2_partin[inh] * vr_inr[inh]**2) / np.sum(mh2_partin[inh]))
@@ -462,7 +498,6 @@ for z in range(0,1): # 7,len(snap_files)):
                          if(len(mo_inr[coldp]) > 0):
                             mhdiff_inr_cold = mhdiff_inr[coldp]
                             vr_inr_cold = vr_inr[coldp]
-                            dheight_cold = dheight_inr[coldp]
                             oh_profile[g,i] = np.sum(mo_inr[coldp]) / np.sum(mhdiff_inr_cold)
                             feh_profile[g,i] = np.sum(mfe_inr[coldp]) / np.sum(mhdiff_inr_cold)
                             coldgas_profile[g,i] = np.sum(mpart_inr[coldp])
@@ -470,6 +505,7 @@ for z in range(0,1): # 7,len(snap_files)):
                             disp_cool_profile[g,i] = np.sqrt(np.sum(mhdiff_inr_cold * vr_inr_cold**2) / np.sum(mhdiff_inr_cold))
 
                             if(method == 'circular_apertures_face_on_map'):
+                               dheight_cold = dheight_inr[coldp]
                                inh = np.where(abs(dheight_cold) <= 1e-2) #within 10kpc from the disk plane
                                if(len(dheight_cold[inh]) > 0):
                                     disp_cool_profile_h10[g,i] = np.sqrt(np.sum(mhdiff_inr_cold[inh] * vr_inr_cold[inh]**2) / np.sum(mhdiff_inr_cold[inh]))
@@ -480,8 +516,13 @@ for z in range(0,1): # 7,len(snap_files)):
                          del(temp_inr, dens_inr, mh_inr, mhdiff_inr, mo_inr, mfe_inr, sfr_inr, coldp) #release data
 
               elif (family_method == 'grid'):
+                  dcentre_i = np.zeros(shape = len(coord_in_p0))
+                  dcentre_j = np.zeros(shape = len(coord_in_p0))
                   if(method == 'grid_random_map'):
                       dcentre_i, dcentre_j = distance_2d_grid_random(x_in[g], y_in[g], coord_in_p0)
+                  if(method == 'grid_face_on_map'):
+                      dcentre_i, dcentre_j = distance_2d_grid_face(x_in[g], y_in[g], z_in[g], coord_in_p0, spin_vec_norm[g,:])
+
                   for i,ri in enumerate(gr):
                       inr = np.where((dcentre_i >= (ri - dg/2)*1e-3) & (dcentre_i < (ri + dg/2)*1e-3))
                       if(len(dcentre_i[inr]) > 0):
@@ -524,7 +565,8 @@ for z in range(0,1): # 7,len(snap_files)):
                                      feh_profile[g,i * len(gr) + j] = np.sum(mfe_inj[coldp]) / np.sum(mh_inj[coldp])
                                      coldgas_profile[g,i * len(gr) + j] = np.sum(mpart_inj[coldp])
                                   del(temp_inj,dens_inj,mh_inj,mo_inj,mfe_inj,mpart_inj,coldp)
-                          del(dcentre_i, dcentre_j,temp_inr,dens_inr,mh_inr,mhdiff_inr,mo_inr,mfe_inr,speciesfrac_inr,dust_part_inr,sfr_inr,dcentre_j_inr)        
+                          del(temp_inr,dens_inr,mh_inr,mhdiff_inr,mo_inr,mfe_inr,speciesfrac_inr,dust_part_inr,sfr_inr,dcentre_j_inr)
+                  del(dcentre_i, dcentre_j)
               del(m_part0, sfr_part0, temp_part0, dust_part0, elementmassfracs_part0, elementmassfracsdiff_part0, dens_part0, speciesfrac_part0) #release data
       
            if(npartingalT4 > 0):
@@ -546,6 +588,9 @@ for z in range(0,1): # 7,len(snap_files)):
               elif (family_method == 'grid'):
                  if(method == 'grid_random_map'):
                      dcentre_i, dcentre_j = distance_2d_grid_random(x_in[g], y_in[g], coord_in_p4)
+                 if(method == 'grid_face_on_map'):
+                     dcentre_i, dcentre_j = distance_2d_grid_face(x_in[g], y_in[g], z_in[g], coord_in_p4, spin_vec_norm[g,:])
+
                  for i,ri in enumerate(gr):
                      inr = np.where((dcentre_i >= (ri - dg/2)*1e-3) & (dcentre_i < (ri + dg/2)*1e-3))
                      if(len(dcentre_i[inr]) > 0):
@@ -557,7 +602,7 @@ for z in range(0,1): # 7,len(snap_files)):
                                  #calculate profiles
                                  npart4_profile[g,i * len(gr) + j] = len(dcentre_j_inr[inrj])
                                  mstar_profile[g,i * len(gr) + j] = np.sum(mp4_inr[inrj])
-                         del(dcentre_i, dcentre_j,mp4_inr,inr,dcentre_j_inr)
+                 del(dcentre_i, dcentre_j,mp4_inr,inr,dcentre_j_inr)
               del(coord_in_p4,m_part4)
 
   
