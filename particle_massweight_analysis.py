@@ -12,18 +12,22 @@ import common
 ################## select the model and redshift you want #######################
 #model_name = 'L0100N0752/Thermal_non_equilibrium/'
 #model_name = 'L0050N0752/Thermal_non_equilibrium/'
-model_name = 'L0025N0376/Thermal_non_equilibrium/'
-model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
+#model_name = 'L0025N0376/Thermal_non_equilibrium/'
+model_name = 'L0025N0752/Thermal/'
 
+model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
+out_dir = '/cosma8/data/dp004/ngdg66/Runs/' + model_name
 #definitions below correspond to z=0
 #snap_files = ['0127', '0119', '0114', '0092', '0064', '0056', '0048', '0040', '0026', '0018']
 #zstarget = [0.0, 0.1, 0.2, 1.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0]
 
 #snap_files = ['0123', '0088', '0072', '0060', '0048', '0040'] #, '0026', '0020']
 #zstarget = [0.0, 1.0, 2.0, 3.5, 4.0, 5.0, 6.0] #, 8.0, 10.0]
+snap_files = ['0127', '0102', '0092', '0076', '0064', '0056', '0048', '0040', '0032', '0026', '0018']
+zstarget = [0.0, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0]
 
-snap_files = ['0123', '0115',  '0110',  '0106', '0102', '0098', '0096',  '0094', '0092',  '0090', '0088',  '0084', '0080', '0076', '0072', '0068', '0064', '0060', '0056', '0052', '0048', '0044', '0040', '0036', '0032', '0028']
-zstarget = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5]
+#snap_files = ['0123', '0115',  '0110',  '0106', '0102', '0098', '0096',  '0094', '0092',  '0090', '0088',  '0084', '0080', '0076', '0072', '0068', '0064', '0060', '0056', '0052', '0048', '0044', '0040', '0036', '0032', '0028']
+#zstarget = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5]
 
 #snap_files = ['0064', '0060', '0052', '0048', '0040']
 #zstarget = [3.5, 4.0, 4.5, 5.0, 6.0]
@@ -51,10 +55,10 @@ for z in range(0,5): #len(snap_files)):
     #fields_fof = /SOAP/HostHaloIndex, 
     #/InputHalos/HBTplus/HostFOFId
     fields_sgn = {'InputHalos': ('HaloCatalogueIndex', 'IsCentral')} 
-    fields ={'ExclusiveSphere/30kpc': ('StellarMass', 'StarFormationRate', 'HalfMassRadiusStars', 'CentreOfMass', 'AtomicHydrogenMass', 'MolecularHydrogenMass', 'KappaCorotStars', 'KappaCorotGas', 'DiscToTotalStellarMassFraction', 'SpinParameter', 'MassWeightedMeanStellarAge', 'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasLowLimit' ,'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasHighLimit', 'AngularMomentumStars')}
+    fields ={'ExclusiveSphere/30kpc': ('StellarMass', 'StarFormationRate', 'HalfMassRadiusStars', 'CentreOfMass', 'AtomicHydrogenMass', 'MolecularHydrogenMass', 'KappaCorotStars', 'KappaCorotGas', 'DiscToTotalStellarMassFraction', 'MassWeightedMeanStellarAge', 'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasLowLimit' ,'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasHighLimit', 'AngularMomentumStars')}
     h5data_groups = common.read_group_data_colibre(model_dir, snap_file, fields)
     h5data_idgroups = common.read_group_data_colibre(model_dir, snap_file, fields_sgn)
-    (m30, sfr30, r50, cp, mHI, mH2, kappacostar, kappacogas, disctotot, spin, stellarage, ZgasLow, ZgasHigh, Jstars) = h5data_groups
+    (m30, sfr30, r50, cp, mHI, mH2, kappacostar, kappacogas, disctotot, stellarage, ZgasLow, ZgasHigh, Jstars) = h5data_groups
 
     #unit conversion
     m30 = m30 * Mu
@@ -86,7 +90,6 @@ for z in range(0,5): #len(snap_files)):
        kappacostar_in = kappacostar[select]
        kappacogas_in = kappacogas[select]
        disctotot_in = disctotot[select]
-       spin_in = spin[select]
        stellarage_in = stellarage[select]
        ZgasLow_in = ZgasLow[select]
        ZgasHigh_in = ZgasHigh[select]
@@ -94,8 +97,6 @@ for z in range(0,5): #len(snap_files)):
        y_in = yg[select]
        z_in = zg[select]
        Jstars_in = Jstars[select, :]
-       spin_vec_norm = Jstars_in / np.sqrt( Jstars_in[:,0]**2 + Jstars_in[:,1]**2 + Jstars_in[:,2]**2) #normalise Jstars vector. Needed to find the plane of rotation
-       spin_vec_norm = spin_vec_norm[0] #reduce dimensionality
    
        #initialise profile arrays
        mparts = np.array([])
@@ -183,5 +184,5 @@ for z in range(0,5): #len(snap_files)):
        part_allprops[7,:] = mdustparts
 
        #save particle profiles
-       np.savetxt(model_name + 'particles_ap50ckpc_z' + str(ztarget) + ".txt", part_allprops)
+       np.savetxt(out_dir + '/ProcessedData/particles_ap50ckpc_z' + str(ztarget) + ".txt", part_allprops)
 

@@ -274,7 +274,7 @@ def read_group_data_colibre(model_dir, snap_file, fields):
     """Read the galaxies.hdf5 file for the given model/file_*subvolume"""
 
     data = collections.OrderedDict()
-    fname = os.path.join(model_dir, 'SOAP', 'halo_properties_' + snap_file + '.hdf5')
+    fname = os.path.join(model_dir, 'SOAP-HBT', 'halo_properties_' + snap_file + '.hdf5')
     print('Reading subhalo data from %s', fname)
     logger.info('Reading subhalo data from %s', fname)
     with h5py.File(fname, 'r') as f:
@@ -318,7 +318,7 @@ def read_particle_data_colibre(model_dir, snap_file, fields):
     """Read the particles hdf5 file for the given model/file_*subvolume"""
 
     data = collections.OrderedDict()
-    fname = os.path.join(model_dir, 'SOAP', 'colibre_with_SOAP_membership_' + snap_file + '.hdf5')
+    fname = os.path.join(model_dir, 'SOAP-HBT', 'colibre_with_SOAP_membership_' + snap_file + '.hdf5')
     logger.info('Reading particle data from %s', fname)
     with h5py.File(fname, 'r') as f:
         for gname, dsnames in fields.items():

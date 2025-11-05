@@ -21,19 +21,25 @@ method = 'circular_apertures_face_on_map'
 #################################################################################
 
 ################## select the model and redshift you want #######################
-#model_name = 'L0100N0752/Thermal_non_equilibrium/'
+#model_name = 'L0100N1504/Thermal/'
+model_name = 'L0100N1504/HYBRID_AGN_m6/'
+
 #model_name = 'L0050N0752/Thermal_non_equilibrium/'
 #model_name = 'L0025N0376/Thermal/'
-model_name = 'L200_m6/Thermal/'
+#model_name = 'L200_m6/Thermal/'
 
 model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
+out_dir = '/cosma8/data/dp004/ngdg66/Runs/' + model_name
 
 #definitions below correspond to z=0
-#snap_files = ['0127', '0119', '0114', '0102', '0092', '0076', '0064', '0056', '0048', '0040', '0026', '0018']
-#zstarget = [0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0]
+#snap_files = ['0127', '0119', '0114', '0102', '0092', '0084', '0076', '0064', '0056', '0048', '0040', '0026', '0018']
+#zstarget = [0.0, 0.1, 0.2, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0]
 
-snap_files = ['0102', '0092', '0076', '0064', '0056', '0048', '0040', '0032', '0026', '0018']
-zstarget = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0]
+snap_files = ['0127',  '0114', '0092']
+zstarget = [0.0, 0.2, 1.0]
+
+#snap_files = ['0102', '0092', '0076', '0064', '0056', '0048', '0040', '0032', '0026', '0018']
+#zstarget = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0]
 
 #snap_files = ['0056', '0048', '0040', '0026', '0018']
 #zstarget = [4.0, 5.0, 6.0, 8.0, 10.0]
@@ -101,7 +107,7 @@ def distance_2d_faceon(x,y,z, coord, spin_vec):
 
  
 ##### loop through redshifts ######
-for z in range(7,8): #0,len(snap_files)):
+for z in range(0,len(snap_files)):
     snap_file =snap_files[z]
     ztarget = zstarget[z]
     comov_to_physical_length = 1.0 / (1.0 + ztarget)
@@ -110,10 +116,15 @@ for z in range(7,8): #0,len(snap_files)):
     #fields_fof = /SOAP/HostHaloIndex, 
     #/InputHalos/HBTplus/HostFOFId
     fields_sgn = {'InputHalos': ('HaloCatalogueIndex', 'IsCentral', 'HBTplus/DescendantTrackId', 'HBTplus/TrackId')} 
-    fields ={'ExclusiveSphere/50kpc': ('StellarMass', 'StarFormationRate', 'HalfMassRadiusStars', 'CentreOfMass', 'AtomicHydrogenMass', 'MolecularHydrogenMass', 'KappaCorotStars', 'KappaCorotGas', 'DiscToTotalStellarMassFraction', 'MassWeightedMeanStellarAge', 'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasLowLimit' ,'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasHighLimit', 'AngularMomentumStars', 'DustLargeGrainMass', 'DustSmallGrainMass')}
+    fields = {'ExclusiveSphere/50kpc': ('StellarMass', 'StarFormationRate', 'HalfMassRadiusStars', 'CentreOfMass', 'AtomicHydrogenMass', 'MolecularHydrogenMass', 'KappaCorotStars', 'KappaCorotGas', 'DiscToTotalStellarMassFraction', 'MassWeightedMeanStellarAge', 'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasLowLimit' ,'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasHighLimit', 'AngularMomentumStars', 'DustLargeGrainMass', 'DustSmallGrainMass', 'MostMassiveBlackHoleMass', 'MostMassiveBlackHoleAccretionRate', 'MostMassiveBlackHoleNumberOfAGNEvents', 'MostMassiveBlackHoleInjectedThermalEnergy', 'CentreOfMassVelocity', 'AveragedStarFormationRate')}
+    fields_so = {'SO/200_crit': ('TotalMass', 'CentreOfMass')}
+
     h5data_groups = common.read_group_data_colibre(model_dir, snap_file, fields)
     h5data_idgroups = common.read_group_data_colibre(model_dir, snap_file, fields_sgn)
-    (m30, sfr30, r50, cp, mHI, mH2, kappacostar, kappacogas, disctotot, stellarage, ZgasLow, ZgasHigh, Jstars, mdustl, mdusts) = h5data_groups
+    h5data_so = common.read_group_data_colibre(model_dir, snap_file, fields_so)
+
+    (m30, sfr30, r50, cp, mHI, mH2, kappacostar, kappacogas, disctotot, stellarage, ZgasLow, ZgasHigh, Jstars, mdustl, mdusts, bhm, bhacc, bh_n_agn_events, bh_inj_energ, cpv, sfr_ave) = h5data_groups
+    (m200crit, cp_group) = h5data_so
 
     #unit conversion
     mdust = (mdustl + mdusts) * Mu
@@ -125,11 +136,23 @@ for z in range(7,8): #0,len(snap_files)):
     stellarage = stellarage * tu / 1e9 #in Gyr
     cp = cp * Lu * comov_to_physical_length
     Jstars = Jstars * Mu / (Lu * comov_to_physical_length)**2 / tu
-    
+    bhm = bhm * Mu
+    bhacc = bhacc * Mu / tu
+    bh_inj_energ = bh_inj_energ * (Lu * comov_to_physical_length)**2 * Mu / tu**2 
+    sfr_ave = sfr_ave * Mu / tu
+    m200crit = m200crit * Mu
+
     (sgn, is_central, desc_id, track_id) = h5data_idgroups
     xg = cp[:,0]
     yg = cp[:,1]
     zg = cp[:,2]
+    vxg = cpv[:,0]
+    vyg = cpv[:,1]
+    vzg = cpv[:,2]
+    xh = cp_group[:,0]
+    yh = cp_group[:,1]
+    zh = cp_group[:,2]
+
     ###################################################################################
 
 
@@ -154,13 +177,25 @@ for z in range(7,8): #0,len(snap_files)):
        x_in = xg[select]
        y_in = yg[select]
        z_in = zg[select]
+       vx_in = vxg[select]
+       vy_in = vyg[select]
+       vz_in = vzg[select]
+       xh_in = xh[select]
+       yh_in = yh[select]
+       zh_in = zh[select]
+       m200crit_in = m200crit[select]
+       bhm_in = bhm[select]
+       bhacc_in = bhacc[select]
+       bh_inj_energ_in = bh_inj_energ[select]
+       bh_n_agn_events_in = bh_n_agn_events[select]
+       sfr_ave_in = sfr_ave[select]
        Jstars_in = Jstars[select, :]
        Jstars_in = Jstars_in[0]
        Jstars_in_norm = np.sqrt(Jstars_in[:,0]**2 + Jstars_in[:,1]**2 + Jstars_in[:,2]**2)
        mdust_in = mdust[select]
    
        #save galaxy properties of interest
-       gal_props = np.zeros(shape = (ngals, 20))
+       gal_props = np.zeros(shape = (ngals, 32))
        gal_props[:,0] = sgn_in
        gal_props[:,1] = is_central_in
        gal_props[:,2] = x_in
@@ -181,7 +216,19 @@ for z in range(7,8): #0,len(snap_files)):
        gal_props[:,17] = mdust_in
        gal_props[:,18] = desc_id[select]
        gal_props[:,19] = track_id[select]
+       gal_props[:,20] = vx_in
+       gal_props[:,21] = vy_in
+       gal_props[:,22] = vz_in
+       gal_props[:,23] = xh_in
+       gal_props[:,24] = yh_in
+       gal_props[:,25] = zh_in
+       gal_props[:,26] = m200crit_in
+       gal_props[:,27] = sfr_ave_in[:,1]
+       gal_props[:,28] = bhm_in
+       gal_props[:,29] = bhacc_in
+       gal_props[:,30] = bh_inj_energ_in
+       gal_props[:,31] = bh_n_agn_events_in
 
-       np.savetxt('Runs/' + model_name + '/ProcessedData/GalaxyProperties_z' + str(ztarget) + '.txt', gal_props)
+       np.savetxt(out_dir + '/ProcessedData/GalaxyProperties_z' + str(ztarget) + '.txt', gal_props)
        
    
