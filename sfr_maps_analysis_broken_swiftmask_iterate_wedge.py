@@ -169,7 +169,7 @@ def v_z_dir(v,spin):
 
 #volume limits for SWISIMIO mask. Needs to be in units of the volume
 #ivol = np.array([0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0]) * boxsize
-ivol = np.array([0, 0.5, 1.0]) * boxsize
+ivol = np.array([0, 0.25, 0.5, 0.75, 1.0]) * boxsize
 len_wedge = (len(ivol) - 1)**3
 xlimits = np.zeros(shape = (len_wedge,2))
 ylimits = np.zeros(shape = (len_wedge,2))
@@ -192,7 +192,7 @@ for xi in range(0, len(ivol)-1):
             print("analysing wedge", xlimits[w,:], ylimits[w,:], zlimits[w,:], wedge_name, first_wedge)
 
             ##### loop through redshifts ######
-            for z in range(8,len(snap_files)):
+            for z in range(0, 1): #8,len(snap_files)):
                 snap_file =snap_files[z]
                 ztarget = zstarget[z]
                 comov_to_physical_length = 1.0 / (1.0 + ztarget)

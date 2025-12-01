@@ -339,7 +339,7 @@ def read_particle_membership_colibre(model_dir, snap_file, fields):
 
     data = collections.OrderedDict()
     for idx, subv in enumerate(subvolumes):
-        fname = os.path.join(model_dir, 'SOAP/SOAP_uncompressed/membership_'+ snap_file + '.hdf5')
+        fname = os.path.join(model_dir, 'SOAP-HBT/membership' + snap_file + '/membership_'+ snap_file + '.' + str(subv) + '.hdf5')
         logger.info('Reading particle data from %s', fname)
         with h5py.File(fname, 'r') as f:
             for gname, dsnames in fields.items():
@@ -355,6 +355,47 @@ def read_particle_membership_colibre(model_dir, snap_file, fields):
 
     return list(data.values())
 
+
+def read_particle_membership_colibre_single_subv(model_dir, snap_file, subv, fields):
+    """Read the particles hdf5 file for the given model/file_*subvolume"""
+
+    data = collections.OrderedDict()
+    fname = os.path.join(model_dir, 'SOAP-HBT/membership_' + snap_file + '/membership_'+ snap_file + '.' + str(subv) + '.hdf5')
+    logger.info('Reading particle data from %s', fname)
+    with h5py.File(fname, 'r') as f:
+        for gname, dsnames in fields.items():
+            group = f[gname]
+            for dsname in dsnames:
+                full_name = '%s/%s' % (gname, dsname)
+                l = data.get(full_name, None)
+                if l is None:
+                    l = group[dsname][()]
+                else:
+                    l = np.concatenate([l, group[dsname][()]])
+                data[full_name] = l
+
+    return list(data.values())
+
+
+def read_particle_colibre_single_subv(model_dir, snap_file, subv, fields):
+    """Read the particles hdf5 file for the given model/file_*subvolume"""
+
+    data = collections.OrderedDict()
+    fname = os.path.join(model_dir, 'snapshots/colibre_' + snap_file + '/colibre_'+ snap_file + '.' + str(subv) + '.hdf5')
+    logger.info('Reading particle data from %s', fname)
+    with h5py.File(fname, 'r') as f:
+        for gname, dsnames in fields.items():
+            group = f[gname]
+            for dsname in dsnames:
+                full_name = '%s/%s' % (gname, dsname)
+                l = data.get(full_name, None)
+                if l is None:
+                    l = group[dsname][()]
+                else:
+                    l = np.concatenate([l, group[dsname][()]])
+                data[full_name] = l
+
+    return list(data.values())
 
 
 def read_data(model_dir, snapshot, fields, subvolumes, include_h0_volh=True):
