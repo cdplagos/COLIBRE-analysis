@@ -248,9 +248,9 @@ if(ngals > 0):
    msin  = mstar_sfh[inw,:] 
    wedge_name = 'subvolume_' + str(subvolume)
    np.savetxt(out_dir + '/ProcessedData/' + 'Galaxies_sfrGE0_in_subv_z' + str(ztarget) + wedge_name + ".txt", galaxies_in_subv[inw])
-   np.savetxt(out_dir + '/ProcessedData/' +  'Mstar_SFH_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", msin[0])
+   np.savetxt(out_dir + '/ProcessedData/' +  'Mstar_SFH_ap50ckpc_' + method + "_dt"+ str(dg) + "_z" + str(ztarget) + wedge_name + ".txt", msin[0])
 
    if(subvolume == 0): 
       #save radii info
-      np.savetxt(out_dir + '/ProcessedData/' +  'look_back_time_info_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", gr)
+      np.savetxt(out_dir + '/ProcessedData/' +  'look_back_time_info_' + method + "_dt"+ str(dg) + "_z" + str(ztarget) + ".txt", gr)
    

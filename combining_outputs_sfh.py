@@ -35,11 +35,11 @@ files_to_combine = ['Mstar_SFH_ap50ckpc_']
 
 
 ztarget = 0.0
-dr = 1.0
+dt = 0.01
 subv = range(0,640)
 
-ids = np.loadtxt(out_dir + dir_output_data +  'GalaxyProperties_z' + str(ztarget) + '.txt', unpack = True, usecols = [0])
-rbin = np.loadtxt(out_dir + dir_output_data +  'radii_info_' + method + "_dr" + str(dr) + "_z" + str(ztarget) + ".txt")
+ids = np.loadtxt(out_dir + dir_output_data +  'GalaxyProperties_sfrGE0_z' + str(ztarget) + '.txt', unpack = True, usecols = [0])
+rbin = np.loadtxt(out_dir + dir_output_data +  'look_back_time_info_' + method + "_dt" + str(dt) + "_z" + str(ztarget) + ".txt")
 ngals = len(ids)
 nrbins = len(rbin)
 
@@ -49,10 +49,10 @@ for j, f in enumerate(files_to_combine):
     #loop through subvolumes
     for i in subv:
        #check if the file isn't empty
-       if(os.path.getsize(out_dir + dir_output_data +  f + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "subvolume_" + str(i) +  ".txt") != 0):
+       if(os.path.getsize(out_dir + dir_output_data +  f + method + "_dt"+ str(dt) + "_z" + str(ztarget) + "subvolume_" + str(i) +  ".txt") != 0):
           #read galaxy IDs and profiles that will need to be concatenate.
-          ids_in_subv = np.loadtxt(out_dir + dir_output_data +  'Galaxies_in_subv_z' + str(ztarget) + "subvolume_" + str(i) + ".txt")
-          data_file = np.loadtxt(out_dir + dir_output_data +  f + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "subvolume_" + str(i) +  ".txt")
+          ids_in_subv = np.loadtxt(out_dir + dir_output_data +  'Galaxies_sfrGE0_in_subv_z' + str(ztarget) + "subvolume_" + str(i) + ".txt")
+          data_file = np.loadtxt(out_dir + dir_output_data +  f + method + "_dt"+ str(dt) + "_z" + str(ztarget) + "subvolume_" + str(i) +  ".txt")
           #print("reading subv", i)
           #in the case there is a single galaxy in this suvolume, make sure the data_file array is a matrix for concatenation later
           if(ids_in_subv.size == 1):
@@ -69,9 +69,6 @@ for j, f in enumerate(files_to_combine):
              data = np.append(data, data_file, axis=0)
              ids_all = np.append(ids_all, ids_in_subv)
             
-    if(j == 3): #in this case, save this data to use it to correct metallicity profiles
-        mcold_prof = data
-
     #the difference between the two numbers being printed are the galaxies that are split between subvolumes.
     print("Galaxies in read subvolumes", len(np.unique(ids_all)), len(ids_all))
     data_to_save = np.zeros(shape = (ngals, nrbins))
@@ -83,25 +80,17 @@ for j, f in enumerate(files_to_combine):
         if(len(ids_all[match]) > 1):
            rowsall = data[match,:]
            rowsall = rowsall[0]
-           if(j >= 4):
-              mcoldall = mcold_prof[match,:]
-              mcoldall = mcoldall[0]
            mgastot = np.zeros(shape = nrbins)
            #loop through matches to correct the quantities in this galaxy
            for m in range(0,len(ids_all[match])):
-              if((j <= 8) & (j != 4)): #in these cases, simply sum the masses
-                 data_to_save[g,:] = data_to_save[g,:] + rowsall[m,:]
-              if((j == 4) | (j > 8)): #in this case do a mass weigthed calculation        
-                 data_to_save[g,:] = data_to_save[g,:] + rowsall[m,:] * mcoldall[m,:]
-                 mgastot[:] = mgastot[:] + mcoldall[m,:]
-           if((j == 4) | (j > 8)): 
-                 data_to_save[g,:] = data_to_save[g,:] / mgastot[:] 
+              #simply sum the masses
+              data_to_save[g,:] = data_to_save[g,:] + rowsall[m,:]
         #if there us a single match, simply save the profile of this galaxy
         if(len(ids_all[match]) == 1):
            data_to_save[g,:] = data[match[0],:]
 
     #save unified file
-    print("Will save file", out_dir + dir_output_data +  f + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt")    
-    np.savetxt(out_dir + dir_output_data +  f + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", data_to_save)
+    print("Will save file", out_dir + dir_output_data +  f + method + "_dt"+ str(dt) + "_z" + str(ztarget) + ".txt")    
+    np.savetxt(out_dir + dir_output_data +  f + method + "_dt"+ str(dt) + "_z" + str(ztarget) + ".txt", data_to_save)
 
 
