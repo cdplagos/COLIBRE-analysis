@@ -484,6 +484,7 @@ if(ngals > 0):
                      npart0_profile[g,i] = len(dcentre[inr])
                      vr_inr = v_z_dir(v_part0[inr,:], spin_vec_norm[g,:])
                      temp_inr = temp_part0[inr]
+                     sth_inr2 = 63.48000000000001 * temp_inr/1e4 #one-dimensional thermal velocity squared
                      dens_inr = dens_part0[inr]
                      mh_inr = m_part0[inr] * elementmassfracs_part0[inr,0]
                      mhdiff_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,0]
@@ -505,37 +506,38 @@ if(ngals > 0):
                      mHI_profile[g,i] = np.sum(mh_inr * speciesfrac_part0[inr,0])
                      mH2_profile[g,i] = np.sum(mh_inr * speciesfrac_part0[inr,1] * 2) #factor 2 comes from H2 being two hydrogen atoms
                      mdust_profile[g,i] = np.sum(mpart_inr * dust_part0[inr])
-                     disp_H2_profile[g,i] = np.sqrt(np.sum(mh2_partin * vr_inr**2) / mH2_profile[g,i])
-                     disp_HI_profile[g,i] = np.sqrt(np.sum(mhi_partin * vr_inr**2) / mHI_profile[g,i])
+                     disp_H2_profile[g,i] = np.sqrt(np.sum(mh2_partin * (vr_inr**2 + sth_inr2)) / mH2_profile[g,i])
+                     disp_HI_profile[g,i] = np.sqrt(np.sum(mhi_partin * (vr_inr**2 + sth_inr2)) / mHI_profile[g,i])
                      if(method == 'circular_apertures_face_on_map'):
                         dheight_inr = dheight[inr]
                         inh = np.where(abs(dheight_inr )<= 1e-2) #within 10kpc from the disk plane
                         if(len(mh2_partin[inh]) > 0):
-                           disp_H2_profile_h10[g,i] = np.sqrt(np.sum(mh2_partin[inh] * vr_inr[inh]**2) / np.sum(mh2_partin[inh]))
-                           disp_HI_profile_h10[g,i] = np.sqrt(np.sum(mhi_partin[inh] * vr_inr[inh]**2) / np.sum(mhi_partin[inh]))
+                           disp_H2_profile_h10[g,i] = np.sqrt(np.sum(mh2_partin[inh] * (vr_inr[inh]**2 + sth_inr2[inh])) / np.sum(mh2_partin[inh]))
+                           disp_HI_profile_h10[g,i] = np.sqrt(np.sum(mhi_partin[inh] * (vr_inr[inh]**2 + sth_inr2[inh])) / np.sum(mhi_partin[inh]))
                         inh = np.where(abs(dheight_inr )<= 5e-3) #within 10kpc from the disk plane
                         if(len(mh2_partin[inh]) > 0):
-                           disp_H2_profile_h5[g,i] = np.sqrt(np.sum(mh2_partin[inh] * vr_inr[inh]**2) / np.sum(mh2_partin[inh]))
-                           disp_HI_profile_h5[g,i] = np.sqrt(np.sum(mhi_partin[inh] * vr_inr[inh]**2) / np.sum(mhi_partin[inh]))
+                           disp_H2_profile_h5[g,i] = np.sqrt(np.sum(mh2_partin[inh] * (vr_inr[inh]**2 + sth_inr2[inh])) / np.sum(mh2_partin[inh]))
+                           disp_HI_profile_h5[g,i] = np.sqrt(np.sum(mhi_partin[inh] * (vr_inr[inh]**2 + sth_inr2[inh])) / np.sum(mhi_partin[inh]))
 
                      coldp = np.where((temp_inr < 10**(4.5)) & (dens_inr > 0)) #select particles with temperatures cooler than 10^4.5K and calculate metallicity profiles with those particles only.
                      if(len(mo_inr[coldp]) > 0):
                         mhdiff_inr_cold = mhdiff_inr[coldp]
                         vr_inr_cold = vr_inr[coldp]
+                        sth_inr2_cold = sth_inr2[coldp]
                         oh_profile[g,i] = np.sum(mo_inr[coldp]) / np.sum(mhdiff_inr_cold)
                         feh_profile[g,i] = np.sum(mfe_inr[coldp]) / np.sum(mhdiff_inr_cold)
                         coldgas_profile[g,i] = np.sum(mpart_inr[coldp])
                         npart0_cold_profile[g,i] = len(mo_inr[coldp]) 
-                        disp_cool_profile[g,i] = np.sqrt(np.sum(mhdiff_inr_cold * vr_inr_cold**2) / np.sum(mhdiff_inr_cold))
+                        disp_cool_profile[g,i] = np.sqrt(np.sum(mhdiff_inr_cold * (vr_inr_cold**2 + sth_inr2_cold)) / np.sum(mhdiff_inr_cold))
 
                         if(method == 'circular_apertures_face_on_map'):
                            dheight_cold = dheight_inr[coldp]
                            inh = np.where(abs(dheight_cold) <= 1e-2) #within 10kpc from the disk plane
                            if(len(dheight_cold[inh]) > 0):
-                                disp_cool_profile_h10[g,i] = np.sqrt(np.sum(mhdiff_inr_cold[inh] * vr_inr_cold[inh]**2) / np.sum(mhdiff_inr_cold[inh]))
+                                disp_cool_profile_h10[g,i] = np.sqrt(np.sum(mhdiff_inr_cold[inh] * (vr_inr_cold[inh]**2 + sth_inr2_cold[inh])) / np.sum(mhdiff_inr_cold[inh]))
                            inh = np.where(abs(dheight_cold) <= 5e-3) #within 5kpc from the disk plane
                            if(len(dheight_cold[inh]) > 0):
-                                disp_cool_profile_h5[g,i] = np.sqrt(np.sum(mhdiff_inr_cold[inh] * vr_inr_cold[inh]**2) / np.sum(mhdiff_inr_cold[inh]))
+                                disp_cool_profile_h5[g,i] = np.sqrt(np.sum(mhdiff_inr_cold[inh] * (vr_inr_cold[inh]**2 + sth_inr2_cold[inh])) / np.sum(mhdiff_inr_cold[inh]))
 
                      del(temp_inr, dens_inr, mh_inr, mhdiff_inr, mo_inr, mfe_inr, sfr_inr, coldp) #release data
 

@@ -31,7 +31,7 @@ model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
 out_dir = '/cosma8/data/dp004/ngdg66/Runs/' + model_name
 dir_output_data = '/ProcessedData/'
 
-files_to_combine = ['Mstar_SFH_ap50ckpc_']
+files_to_combine = ['Mstar_SFH_boundsub_']
 
 
 ztarget = 0.0

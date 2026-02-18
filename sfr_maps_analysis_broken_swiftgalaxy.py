@@ -70,7 +70,6 @@ snap_type = [True,True,True,True,True,True,True,True,True,True,True,True,True]
 #snap_type = [True,True,True,True,True,True,True,True]
 
 analyse_particle_data = True
-write_galaxy_properties = True
 
 #snap_files = ['0102', '0092', '0076', '0064', '0056', '0048', '0040', '0032', '0026', '0018']
 #zstarget = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0]
@@ -158,9 +157,17 @@ def v_z_dir(v,spin):
     vin = v[0]#.value
     vz = (vin[:,0] * spin[0] +  vin[:,1] * spin[1] +  vin[:,2] * spin[2])
     return vz
- 
+
+
+nstart = 0 
+
+if(nstart == 0):
+   write_galaxy_properties = True
+else:
+   write_galaxy_properties = False
+
 ##### loop through redshifts ######
-for z in range(0,6): #len(snap_files)):
+for z in range(0,len(snap_files)):
     snap_file =snap_files[z]
     ztarget = zstarget[z]
     comov_to_physical_length = 1.0 / (1.0 + ztarget)
@@ -209,6 +216,11 @@ for z in range(0,6): #len(snap_files)):
     ngals = len(m30[select])
     if(ngals > 0):
        print("Number of galaxies of interest", ngals, " at redshift", ztarget)
+       nend = nstart + 5000 #int(np.floor((ngals + 0.0)/nbins))
+       if(nend > ngals):
+            nend = ngals
+       print("Number of galaxies being analysed nstart", nstart, " nend", nend)
+      
        m_in = m30[select]
        sfr_in = sfr30[select]
        sgn_in = sgn[select]
@@ -317,7 +329,7 @@ for z in range(0,6): #len(snap_files)):
      
            #loop through galaxies
            print("Will compute radial profiles")
-           for g in range(0,ngals):
+           for g in range(nstart,nend):
                print("processing galaxy:", g, "out of", ngals)
                sg = SWIFTGalaxy(
                    virtual_snapshot_file,
@@ -535,26 +547,26 @@ for z in range(0,6): #len(snap_files)):
 
       
            #save galaxy profiles
-           np.savetxt(out_dir + dir_output_data + 'SFR_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", sfr_profile)
-           np.savetxt(out_dir + dir_output_data +  'MHI_profiles_ap50ckpc_'+ method + "_dr"+ str(dr) + "_z"  + str(ztarget) + ".txt", mHI_profile)
-           np.savetxt(out_dir + dir_output_data +  'MH2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", mH2_profile)
-           np.savetxt(out_dir + dir_output_data +  'OH_gas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", oh_profile)
-           np.savetxt(out_dir + dir_output_data +  'FeH_gas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", feh_profile)
-           np.savetxt(out_dir + dir_output_data +  'Mstar_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", mstar_profile)
-           np.savetxt(out_dir + dir_output_data +  'Mdust_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", mdust_profile)
-           np.savetxt(out_dir + dir_output_data +  'NumberPart0_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", npart0_profile)
-           np.savetxt(out_dir + dir_output_data +  'NumberPart4_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", npart4_profile)
-           np.savetxt(out_dir + dir_output_data +  'Mcoldgas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", coldgas_profile)
-           np.savetxt(out_dir + dir_output_data +  'Disp_HI_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_HI_profile)
-           np.savetxt(out_dir + dir_output_data +  'Disp_H2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_H2_profile)
-           np.savetxt(out_dir + dir_output_data +  'Disp_Cool_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_cool_profile)
+           np.savetxt(out_dir + dir_output_data +  'SFR_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", sfr_profile)
+           np.savetxt(out_dir + dir_output_data +  'MHI_profiles_ap50ckpc_'+ method + "_dr"+ str(dr) + "_z"  + str(ztarget) + "_nstart" + str(nstart) + ".txt", mHI_profile)
+           np.savetxt(out_dir + dir_output_data +  'MH2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", mH2_profile)
+           np.savetxt(out_dir + dir_output_data +  'OH_gas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", oh_profile)
+           np.savetxt(out_dir + dir_output_data +  'FeH_gas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", feh_profile)
+           np.savetxt(out_dir + dir_output_data +  'Mstar_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", mstar_profile)
+           np.savetxt(out_dir + dir_output_data +  'Mdust_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", mdust_profile)
+           np.savetxt(out_dir + dir_output_data +  'NumberPart0_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", npart0_profile)
+           np.savetxt(out_dir + dir_output_data +  'NumberPart4_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", npart4_profile)
+           np.savetxt(out_dir + dir_output_data +  'Mcoldgas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", coldgas_profile)
+           np.savetxt(out_dir + dir_output_data +  'Disp_HI_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", disp_HI_profile)
+           np.savetxt(out_dir + dir_output_data +  'Disp_H2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", disp_H2_profile)
+           np.savetxt(out_dir + dir_output_data +  'Disp_Cool_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", disp_cool_profile)
            if(method == 'circular_apertures_face_on_map'):
-               np.savetxt(out_dir + dir_output_data +  'Disp_HI_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_HI_profile_h10)
-               np.savetxt(out_dir + dir_output_data +  'Disp_H2_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_H2_profile_h10)
-               np.savetxt(out_dir + dir_output_data +  'Disp_Cool_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_cool_profile_h10)
-               np.savetxt(out_dir + dir_output_data +  'Disp_HI_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_HI_profile_h5)
-               np.savetxt(out_dir + dir_output_data +  'Disp_H2_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_H2_profile_h5)
-               np.savetxt(out_dir + dir_output_data +  'Disp_Cool_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_cool_profile_h5)
+               np.savetxt(out_dir + dir_output_data +  'Disp_HI_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) +  ".txt", disp_HI_profile_h10)
+               np.savetxt(out_dir + dir_output_data +  'Disp_H2_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", disp_H2_profile_h10)
+               np.savetxt(out_dir + dir_output_data +  'Disp_Cool_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", disp_cool_profile_h10)
+               np.savetxt(out_dir + dir_output_data +  'Disp_HI_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", disp_HI_profile_h5)
+               np.savetxt(out_dir + dir_output_data +  'Disp_H2_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", disp_H2_profile_h5)
+               np.savetxt(out_dir + dir_output_data +  'Disp_Cool_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", disp_cool_profile_h5)
        
            #save radii info
-           np.savetxt(out_dir + dir_output_data +  'radii_info_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", r_dist_centre)
+           np.savetxt(out_dir + dir_output_data +  'radii_info_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "_nstart" + str(nstart) + ".txt", r_dist_centre)

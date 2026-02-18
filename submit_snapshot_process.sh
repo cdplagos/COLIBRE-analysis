@@ -4,12 +4,13 @@
 # 37 zstarget = [0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0]
 
 
-ztarget="6.0"
-snap="0040"
-#volumes="`eval echo {0..639}`"
-volumes="`eval echo {400..639}`"
+ztarget="0.8"
+snap="0096"
+volumes="`eval echo {0..639}`"
+#volumes="`eval echo {140..141}`"
+#volumes="208 211 214 217 222 228 254 262 285 286 287"
 
 for ivol in $volumes; do
-        sbatch -A dp004 -p cosma8 -t 01:00:00 -N 1 --mem 40GB run_python_subv.sh $snap $ztarget $ivol
+        sbatch -A dp004 -p cosma8 -t 02:00:00 -N 1 --mem 40GB run_python_snapshot_subv.sh $snap $ztarget $ivol $snip
 done
 

@@ -7,26 +7,16 @@ import common
 #import utilities_statistics as us
 
 
-###### choose what kind of profiles you want (choose one only) ##################
-family_method = 'radial_profiles'
-method = 'circular_apertures_face_on_map'
-#method = 'circular_apertures_random_map'
-#method = 'spherical_apertures'
-
-#family_method = 'grid'
-#method = 'grid_face_on_map' #to be coded
-#method = 'grid_random_map'
-#method = 'voronoi_maps'  #to be coded
 
 #################################################################################
 
 ################## select the model and redshift you want #######################
 #model_name = 'L0100N1504/Thermal/'
-model_name = 'L0100N1504/HYBRID_AGN_m6/'
+#model_name = 'L0100N1504/HYBRID_AGN_m6/'
 
 #model_name = 'L0050N0752/Thermal_non_equilibrium/'
 #model_name = 'L0025N0376/Thermal/'
-#model_name = 'L200_m6/Thermal/'
+model_name = 'L200_m6/Thermal/'
 
 model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
 out_dir = '/cosma8/data/dp004/ngdg66/Runs/' + model_name
@@ -35,8 +25,8 @@ out_dir = '/cosma8/data/dp004/ngdg66/Runs/' + model_name
 #snap_files = ['0127', '0119', '0114', '0102', '0092', '0084', '0076', '0064', '0056', '0048', '0040', '0026', '0018']
 #zstarget = [0.0, 0.1, 0.2, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0]
 
-snap_files = ['0127',  '0114', '0092']
-zstarget = [0.0, 0.2, 1.0]
+snap_files = ['0127'] #,  '0114', '0092']
+zstarget = [0.0] #, 0.2, 1.0]
 
 #snap_files = ['0102', '0092', '0076', '0064', '0056', '0048', '0040', '0032', '0026', '0018']
 #zstarget = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0]
@@ -57,55 +47,6 @@ density_cgs_conv = 6.767905773162602e-31 #conversion from simulation units to CG
 mH = 1.6735575e-24 #in gr
 #################################################################################
 
-#define radial bins of interest. This going from 0 to 50kpc, in bins of 1kpc
-rmax = 50
-rmin = 0
-dr = 1.0
-rbins = np.arange(rmin, rmax, dr)
-xr = rbins + dr/2.0 
-nr = len(xr) #number of radial bins
-
-gmax = 50
-gmin = -50
-dg = 1.0
-gbins = np.arange(gmin, gmax, dg)
-gr = gbins + dg/2.0 
-ng = len(gr) #number of radial bins
-
-if(family_method == 'grid'):
-    nr  = ng * ng
-  
-def distance_3d(x,y,z, coord):
-    return np.sqrt((coord[:,0]-x)**2 + (coord[:,1] - y)**2 + (coord[:,2] - z)**2)
-
-def distance_2d_random(x,y, coord):
-    return np.sqrt((coord[:,0]-x)**2 + (coord[:,1] - y)**2)
-
-def distance_2d_grid_random(x,y, coord):
-    return (coord[:,0]-x), (coord[:,1] - y)
-
-
-def distance_2d_faceon(x,y,z, coord, spin_vec):
-    cross_prod = np.zeros(shape = (len(coord[:,0]), 3))
-    coord_norm = np.zeros(shape = (len(coord[:,0]), 3))
-
-    #normalise coordinate vector of particles
-    normal_coord =  np.sqrt(coord[:,0]**2+ coord[:,1]**2 + coord[:,2]**2)
-    coord_norm[:,0] = coord[:,0]/normal_coord
-    coord_norm[:,1] = coord[:,1]/normal_coord
-    coord_norm[:,2] = coord[:,2]/normal_coord
-
-    #calculate cross product vector
-    cross_prod[:,0] = (coord_norm[:,1] * spin_vec[2] - coord_norm[:,2] * spin_vec[1])
-    cross_prod[:,1] = (coord_norm[:,2] * spin_vec[0] - coord_norm[:,0] * spin_vec[2])
-    cross_prod[:,2] = (coord_norm[:,0] * spin_vec[1] - coord_norm[:,1] * spin_vec[0])
-    #calculate angle between vectors
-    sin_thetha = np.sin(np.acos(np.sqrt(cross_prod[:,0]**2 + cross_prod[:,1]**2 + cross_prod[:,2]**2)))
-    #return projected distance
-    dcentre3d = distance_3d(x,y,z, coord)
-    return dcentre3d * sin_thetha
-
- 
 ##### loop through redshifts ######
 for z in range(0,len(snap_files)):
     snap_file =snap_files[z]
@@ -157,7 +98,7 @@ for z in range(0,len(snap_files)):
 
 
     ######################### select galaxies of interest #############################
-    select = np.where((m30 >=1e9) & (sfr30 > 0))
+    select = np.where((m30 >=1e9) & (sfr30 >= 0))
     ngals = len(m30[select])
     if(ngals > 0):
        print("Number of galaxies of interest", ngals, " at redshift", ztarget)
@@ -229,6 +170,6 @@ for z in range(0,len(snap_files)):
        gal_props[:,30] = bh_inj_energ_in
        gal_props[:,31] = bh_n_agn_events_in
 
-       np.savetxt(out_dir + '/ProcessedData/GalaxyProperties_z' + str(ztarget) + '.txt', gal_props)
+       np.savetxt(out_dir + '/ProcessedData/GalaxyProperties_sfrGE0_z' + str(ztarget) + '.txt', gal_props)
        
    

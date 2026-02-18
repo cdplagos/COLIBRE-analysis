@@ -230,16 +230,16 @@ if(ngals > 0):
           mi_part4 = miT4[partin4]
           lbt_part4 = lbt_birth[partin4]
           #compute mean velocity with all stellar particles within 1kpc.
-          dcentre_3d_T4 =  distance_3d(x_in[g], y_in[g], z_in[g], coord_in_p4)
-          in50kpc = np.where(dcentre_3d_T4 < 50.0 *1e-3)
-          if(len(m_part4[in50kpc]) > 0):
-             mi_part4_in = mi_part4[in50kpc]
-             lbt_part4_in = lbt_part4[in50kpc]
+          #dcentre_3d_T4 =  distance_3d(x_in[g], y_in[g], z_in[g], coord_in_p4)
+          #in50kpc = np.where(dcentre_3d_T4 < 50.0 *1e-3)
+          #if(len(m_part4[in50kpc]) > 0):
+          mi_part4_in = mi_part4 #[in50kpc]
+          lbt_part4_in = lbt_part4 #[in50kpc]
 
-             for i,ti in enumerate(gr):
-                 inb = np.where((lbt_part4_in >= (ti - dg/2)) & (lbt_part4_in < (ti + dg/2)))
-                 if(len(lbt_part4_in[inb]) > 0):
-                     mstar_sfh[g,i] = np.sum(mi_part4_in[inb])
+          for i,ti in enumerate(gr):
+              inb = np.where((lbt_part4_in >= (ti - dg/2)) & (lbt_part4_in < (ti + dg/2)))
+              if(len(lbt_part4_in[inb]) > 0):
+                  mstar_sfh[g,i] = np.sum(mi_part4_in[inb])
    
 
    #select galaxies that were processed:
@@ -248,7 +248,7 @@ if(ngals > 0):
    msin  = mstar_sfh[inw,:] 
    wedge_name = 'subvolume_' + str(subvolume)
    np.savetxt(out_dir + '/ProcessedData/' + 'Galaxies_sfrGE0_in_subv_z' + str(ztarget) + wedge_name + ".txt", galaxies_in_subv[inw])
-   np.savetxt(out_dir + '/ProcessedData/' +  'Mstar_SFH_ap50ckpc_' + method + "_dt"+ str(dg) + "_z" + str(ztarget) + wedge_name + ".txt", msin[0])
+   np.savetxt(out_dir + '/ProcessedData/' +  'Mstar_SFH_boundsub_' + method + "_dt"+ str(dg) + "_z" + str(ztarget) + wedge_name + ".txt", msin[0])
 
    if(subvolume == 0): 
       #save radii info

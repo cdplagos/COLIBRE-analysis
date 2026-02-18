@@ -4,9 +4,9 @@
 # 37 zstarget = [0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0]
 
 
-ztarget="0.06"
-snap="0121"
-volumes="`eval echo {0..639}`"
+ztarget="0.08"
+snap="0120"
+volumes="`eval echo {0..110}`"
 snip="True" #is this a snipshot
 #volumes="`eval echo {140..141}`"
 #volumes="208 211 214 217 222 228 254 262 285 286 287"

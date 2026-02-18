@@ -52,7 +52,7 @@ files_to_combine = ['SFR_profiles_ap50ckpc_',
  'Disp_Cool_h5_profiles_ap50ckpc_']
 
 
-ztarget = 0.04
+ztarget = 0.08
 dr = 1.0
 subv = range(0,640)
 #subv = np.append(subv, range(514,640))

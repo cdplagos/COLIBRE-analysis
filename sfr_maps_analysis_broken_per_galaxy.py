@@ -29,12 +29,14 @@ method = 'circular_apertures_face_on_map'
 ################## select the model and redshift you want #######################
 #model_name = 'L0100N1504/Thermal/'
 #model_name = 'L0050N0752/Thermal/'
-model_name = 'L0025N0376/Thermal/'
-#model_name = 'L0025N0188/Thermal/'
+#model_name = 'L0025N0376/Thermal/'
+model_name = 'L0025N0188/Thermal/'
 #model_name = 'L0025N0752/Thermal/'
 #model_name = 'L200_m6/Thermal/'
 
 model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
+out_dir = '/cosma8/data/dp004/ngdg66/Runs/' + model_name 
+dir_output_data = '/ProcessedData/'
 
 sm_limit = 1e9
 
@@ -204,11 +206,11 @@ for z in range(0,1): #len(snap_files)):
 
        soap_catalogue_file = os.path.join(
            model_dir,
-           "SOAP/halo_properties_" + snap_files[z] + ".hdf5",
+           "SOAP-HBT/halo_properties_" + snap_files[z] + ".hdf5",
        )
       
        virtual_snapshot_file = os.path.join(
-           model_dir, "SOAP/colibre_with_SOAP_membership_" + snap_files[z] + ".hdf5"
+           model_dir, "SOAP-HBT/colibre_with_SOAP_membership_" + snap_files[z] + ".hdf5"
        )
       
        sd = SWIFTDataset(soap_catalogue_file)
@@ -262,7 +264,8 @@ for z in range(0,1): #len(snap_files)):
                soap_catalogue_file,
                soap_index=candidates,
            ),
-           preload = {"gas.coordinates", "gas.masses", "gas.star_formation_rates", "gas.temperatures", "gas.densities", "gas.velocities", "gas.dust_mass_fractions.GraphiteLarge","gas.dust_mass_fractions.MgSilicatesLarge", "gas.dust_mass_fractions.FeSilicatesLarge", "gas.dust_mass_fractions.GraphiteSmall", "gas.dust_mass_fractions.MgSilicatesSmall", "gas.dust_mass_fractions.FeSilicatesSmall", "gas.element_mass_fractions.hydrogen", "gas.element_mass_fractions.oxygen", "gas.element_mass_fractions.iron", "gas.element_mass_fractions_diffuse", "gas.species_fractions.HI",  "gas.species_fractions.H2", "stars.coordinates", "stars.velocities", "stars.masses"}, 
+           #preload = {"gas.coordinates", "gas.masses", "gas.star_formation_rates", "gas.temperatures", "gas.densities", "gas.velocities", "gas.dust_mass_fractions.GraphiteLarge","gas.dust_mass_fractions.MgSilicatesLarge", "gas.dust_mass_fractions.FeSilicatesLarge", "gas.dust_mass_fractions.GraphiteSmall", "gas.dust_mass_fractions.MgSilicatesSmall", "gas.dust_mass_fractions.FeSilicatesSmall", "gas.element_mass_fractions.hydrogen", "gas.element_mass_fractions.oxygen", "gas.element_mass_fractions.iron", "gas.element_mass_fractions_diffuse", "gas.species_fractions.HI",  "gas.species_fractions.H2", "stars.coordinates", "stars.velocities", "stars.masses"}, 
+           preload = {"gas.coordinates", "gas.masses", "gas.star_formation_rates", "gas.temperatures", "gas.densities", "gas.velocities", "gas.dust_mass_fractions","gas.element_mass_fractions","gas.element_mass_fractions_diffuse", "gas.species_fractions", "stars.coordinates", "stars.velocities", "stars.masses"},
        )
 
        #loop through galaxies
@@ -291,21 +294,19 @@ for z in range(0,1): #len(snap_files)):
            temp_part0  = sg.gas.temperatures
            dens_part0  = sg.gas.densities
            v_part0     = sg.gas.velocities
-           dust_part0  = sg.gas.dust_mass_fractions.GraphiteLarge + sg.gas.dust_mass_fractions.MgSilicatesLarge + sg.gas.dust_mass_fractions.FeSilicatesLarge + sg.gas.dust_mass_fractions.GraphiteSmall + sg.gas.dust_mass_fractions.MgSilicatesSmall + sg.gas.dust_mass_fractions.FeSilicatesSmall 
+           print(sg.gas.dust_mass_fractions)
+           dust_part0  = sg.gas.dust_mass_fractions['GraphiteLarge'].value + sg.gas.dust_mass_fractions['MgSilicatesLarge'].value + sg.gas.dust_mass_fractions['FeSilicatesLarge'].value + sg.gas.dust_mass_fractions['GraphiteSmall'].value + sg.gas.dust_mass_fractions['MgSilicatesSmall'].value + sg.gas.dust_mass_fractions['FeSilicatesSmall'].value
            t1 = time.monotonic()
-   
-           elementmassfracs_part0 = np.zeros(shape = (len(temp_part0), 3))
+           elementmassfracs_part0 = np.zeros(shape = (len(temp_part0)))
            elementmassfracsdiff_part0 = np.zeros(shape = (len(temp_part0), 3))
            speciesfrac_part0 =  np.zeros(shape = (len(temp_part0), 2))
 
-           elementmassfracs_part0[:,0] = sg.gas.element_mass_fractions.hydrogen
-           elementmassfracs_part0[:,1] = sg.gas.element_mass_fractions.oxygen
-           elementmassfracs_part0[:,2] = sg.gas.element_mass_fractions.iron
-           elementmassfracsdiff_part0[:,0] = sg.gas.element_mass_fractions_diffuse[:,0] #.hydrogen  #
-           elementmassfracsdiff_part0[:,1] = sg.gas.element_mass_fractions_diffuse[:,4] #.oxygen    #
-           elementmassfracsdiff_part0[:,2] = sg.gas.element_mass_fractions_diffuse[:,8] #.iron      #
-           speciesfrac_part0[:,0] = sg.gas.species_fractions.HI
-           speciesfrac_part0[:,1] = sg.gas.species_fractions.H2
+           elementmassfracs_part0 = sg.gas.element_mass_fractions['Hydrogen'].value
+           elementmassfracsdiff_part0[:,0] = sg.gas.element_mass_fractions_diffuse['Hyodrogen'].value #.oxygen  #
+           elementmassfracsdiff_part0[:,1] = sg.gas.element_mass_fractions_diffuse['Oxygen'].value #.oxygen  #
+           elementmassfracsdiff_part0[:,2] = sg.gas.element_mass_fractions_diffuse['Iron'].value #.iron    #
+           speciesfrac_part0[:,0] = sg.gas.species_fractions['HI'].value
+           speciesfrac_part0[:,1] = sg.gas.species_fractions['H2'].value
 
            coord_in_p4 = sg.stars.coordinates
            vT4_in = sg.stars.velocities
@@ -358,7 +359,7 @@ for z in range(0,1): #len(snap_files)):
                       vr_inr = v_z_dir(v_part0[inr,:], spin_vec_norm[g,:])
                       temp_inr = temp_part0[inr]
                       dens_inr = dens_part0[inr]
-                      mh_inr = m_part0[inr] * elementmassfracs_part0[inr,0]
+                      mh_inr = m_part0[inr] * elementmassfracs_part0[inr]
                       mhdiff_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,0]
                       mo_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,1]
                       mfe_inr = m_part0[inr] * elementmassfracsdiff_part0[inr,2]
@@ -366,7 +367,7 @@ for z in range(0,1): #len(snap_files)):
                       mh2_partin = mh_inr * speciesfrac_part0[inr,1] * 2
                       mhi_partin = mh_inr * speciesfrac_part0[inr,0]
                       #reduce dimensionality
-                      mh_inr = mh_inr[0]
+                      #mh_inr = mh_inr[0]
                       mhdiff_inr = mhdiff_inr[0]
                       mo_inr = mo_inr[0]
                       mfe_inr = mfe_inr[0]
@@ -494,27 +495,28 @@ for z in range(0,1): #len(snap_files)):
 
   
        #save galaxy profiles
-       np.savetxt('Runs/' + model_name + '/ProcessedData/' + 'SFR_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", sfr_profile)
-       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'MHI_profiles_ap50ckpc_'+ method + "_dr"+ str(dr) + "_z"  + str(ztarget) + ".txt", mHI_profile)
-       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'MH2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", mH2_profile)
-       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'OH_gas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", oh_profile)
-       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'FeH_gas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", feh_profile)
-       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Mstar_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", mstar_profile)
-       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Mdust_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", mdust_profile)
-       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'NumberPart0_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", npart0_profile)
-       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'NumberPart4_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", npart4_profile)
-       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Mcoldgas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", coldgas_profile)
-       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_HI_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_HI_profile)
-       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_H2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_H2_profile)
-       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_Cool_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_cool_profile)
+       np.savetxt(out_dir + dir_output_data +'SFR_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", sfr_profile)
+       np.savetxt(out_dir + dir_output_data + 'MHI_profiles_ap50ckpc_'+ method + "_dr"+ str(dr) + "_z"  + str(ztarget) + ".txt", mHI_profile)
+       np.savetxt(out_dir + dir_output_data + 'MH2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", mH2_profile)
+       np.savetxt(out_dir + dir_output_data + 'OH_gas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", oh_profile)
+       np.savetxt(out_dir + dir_output_data + 'FeH_gas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", feh_profile)
+       np.savetxt(out_dir + dir_output_data + 'Mstar_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", mstar_profile)
+       np.savetxt(out_dir + dir_output_data + 'Mdust_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", mdust_profile)
+       np.savetxt(out_dir + dir_output_data + 'NumberPart0_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", npart0_profile)
+       np.savetxt(out_dir + dir_output_data + 'NumberPart4_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", npart4_profile)
+       np.savetxt(out_dir + dir_output_data + 'Mcoldgas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", coldgas_profile)
+       np.savetxt(out_dir + dir_output_data + 'Disp_HI_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_HI_profile)
+       np.savetxt(out_dir + dir_output_data + 'Disp_H2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_H2_profile)
+       np.savetxt(out_dir + dir_output_data + 'Disp_Cool_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_cool_profile)
        if(method == 'circular_apertures_face_on_map'):
-           np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_HI_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_HI_profile_h10)
-           np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_H2_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_H2_profile_h10)
-           np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_Cool_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_cool_profile_h10)
-           np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_HI_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_HI_profile_h5)
-           np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_H2_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_H2_profile_h5)
-           np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'Disp_Cool_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_cool_profile_h5)
+           np.savetxt(out_dir + dir_output_data +  'Disp_HI_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_HI_profile_h10)
+           np.savetxt(out_dir + dir_output_data +  'Disp_H2_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_H2_profile_h10)
+           np.savetxt(out_dir + dir_output_data +  'Disp_Cool_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_cool_profile_h10)
+           np.savetxt(out_dir + dir_output_data +  'Disp_HI_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_HI_profile_h5)
+           np.savetxt(out_dir + dir_output_data +  'Disp_H2_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_H2_profile_h5)
+           np.savetxt(out_dir + dir_output_data +  'Disp_Cool_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", disp_cool_profile_h5)
    
        #save radii info
-       np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'radii_info_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", r_dist_centre)
+       np.savetxt(out_dir + dir_output_data +  'radii_info_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", r_dist_centre)
+
    
