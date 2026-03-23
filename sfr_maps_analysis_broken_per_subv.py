@@ -33,13 +33,13 @@ method = 'circular_apertures_face_on_map'
 #model_name = 'L0050N0752/Thermal/'
 #model_name = 'L0025N0376/Thermal/'
 #model_name = 'L0025N0188/Thermal/'
-#model_name = 'L0025N0752/Thermal/'
-model_name = 'L200_m6/Thermal/'
+model_name = 'L0025N0752/Thermal/'
+#model_name = 'L200_m6/Thermal/'
 #model_name = 'L0050N0752/HYBRID_AGN_m6/'
 model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
 out_dir = '/cosma8/data/dp004/ngdg66/Runs/' + model_name + '/'
 
-sm_limit = 1e9
+sm_limit = 1e8
 
 #definitions below correspond to z=0
 #snap_files = ['0127', '0119', '0114', '0102', '0092', '0076', '0064', '0056', '0048', '0040', '0032', '0026', '0018']

@@ -29,7 +29,7 @@ model_name = 'L200_m6/Thermal/'
 
 model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
 out_dir = '/cosma8/data/dp004/ngdg66/Runs/' + model_name
-dir_output_data = '/ProcessedData/'
+dir_output_data = '/ProcessedData/Reduced/'
 
 files_to_combine = ['SFR_profiles_ap50ckpc_',
  'MHI_profiles_ap50ckpc_',
@@ -52,7 +52,7 @@ files_to_combine = ['SFR_profiles_ap50ckpc_',
  'Disp_Cool_h5_profiles_ap50ckpc_']
 
 
-ztarget = 0.08
+ztarget = 0.2
 dr = 1.0
 subv = range(0,640)
 #subv = np.append(subv, range(514,640))
@@ -64,9 +64,11 @@ nrbins = len(rbin)
 
 #loop through files to combine
 for j, f in enumerate(files_to_combine):
+    print("Will combine", f)
     init = 0
     #loop through subvolumes
     for i in subv:
+       #print("will read subvolume", i)
        #check if the file isn't empty
        if(os.path.getsize(out_dir + dir_output_data +  f + method + "_dr"+ str(dr) + "_z" + str(ztarget) + "subvolume_" + str(i) +  ".txt") != 0):
           #read galaxy IDs and profiles that will need to be concatenate.

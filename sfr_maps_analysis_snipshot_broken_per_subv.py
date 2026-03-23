@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(description="Takes two arguments.")
 parser.add_argument('snap', type=str)
 parser.add_argument('redshift', type=float)
 parser.add_argument('subv', type=int)
-parser.add_argument('snip', type=bool)
+parser.add_argument('snip', type=int) #=1 for snipshots, =0 for snapshot
 
 # Parse the arguments
 args = parser.parse_args()
@@ -177,7 +177,9 @@ def v_z_dir(v,spin):
 snap_file = args.snap
 ztarget = args.redshift
 subvolume = args.subv
-snip_type = args.snip
+snip_type = True if args.snip==1 else False
+
+print("type of snapshot", snip_type)
 comov_to_physical_length = 1.0 / (1.0 + ztarget)
 
 ################# read galaxy properties #########################################
@@ -257,7 +259,7 @@ if(ngals > 0):
       gal_props[:,12] = disctotot_in
       gal_props[:,13] = Jstars_in_norm #Jstars norm
       gal_props[:,14] = stellarage_in
-      np.savetxt(out_dir + '/ProcessedData/' + 'GalaxyProperties_reduced_z' + str(ztarget) + '.txt', gal_props)
+      np.savetxt(out_dir + '/ProcessedData/Reduced/' + 'GalaxyProperties_reduced_z' + str(ztarget) + '.txt', gal_props)
       print("Have saved galaxy properties") 
       del(gal_props) #releasing memory
 
@@ -338,6 +340,8 @@ if(ngals > 0):
              els = np.zeros(shape = (len(elementmassfracs[:,0]), 2))
              els[:,0] = elementmassfracs[:,0]
              els[:,1] = 1 - (elementmassfracs[:,1] + elementmassfracs[:,0]) #this is Z
+             ind = np.where(els < 0) #avoid negative numbers which can come out of rounding issues
+             els[ind] = 0
              return els
   
          elementmassfracs = reduce_dim_elements(elementmassfracs)
@@ -355,19 +359,22 @@ if(ngals > 0):
          speciesfrac2[:,1] = speciesfrac[:,3]
          speciesfrac = speciesfrac2
          del(speciesfrac2)
- 
-         elementmassfracsdiff = elementmassfracs
-         elementmassfracsdiff[:,0] = (1 - DustMassFracTot) * elementmassfracs[:,0] #remove dust contribution
-         elementmassfracsdiff[:,1] = (1 - DustMassFracTot) * elementmassfracs[:,1] #remove dust contribution
-
          def reduce_dim_elements(elementmassfracs):
              els = np.zeros(shape = (len(elementmassfracs[:,0]), 2))
              els[:,0] = elementmassfracs[:,0]
              els[:,1] = 1 - (elementmassfracs[:,1] + elementmassfracs[:,0]) #this is Z
+             ind = np.where(els < 0) #avoid negative numbers which can come out of rounding issues
+             els[ind] = 0
              return els
-  
          elementmassfracs = reduce_dim_elements(elementmassfracs)
-         elementmassfracsdiff = reduce_dim_elements(elementmassfracsdiff)
+
+
+         elementmassfracsdiff = elementmassfracs
+         elementmassfracsdiff[:,1] = elementmassfracs[:,1] - DustMassFracTot #remove dust contribution
+
+         #avoid negative numbers
+         ind = np.where(elementmassfracsdiff < 0)
+         elementmassfracsdiff[ind] = 0
 
    #keep only particles in the WNM or CNM
    cold = np.where(temp <= 10**(4.5))
@@ -582,19 +589,19 @@ if(ngals > 0):
    sH2in = disp_H2_profile[inw,:]
    scoolin = disp_cool_profile[inw,:]
    wedge_name = 'subvolume_' + str(subvolume)
-   np.savetxt(out_dir + '/ProcessedData/' + 'Galaxies_in_subv_z' + str(ztarget) + wedge_name + ".txt", galaxies_in_subv[inw])
-   np.savetxt(out_dir + '/ProcessedData/' + 'SFR_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sfrin[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'MHI_profiles_ap50ckpc_'+ method + "_dr"+ str(dr) + "_z"  + str(ztarget) + wedge_name + ".txt", mHIin[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'MH2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", mH2in[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'Z_gas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", ohin[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'Mstar_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", msin[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'Mdust_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", mdin[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'NumberPart0_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", np0in[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'NumberPart4_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", np4in[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'Mcoldgas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", coldgin[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'Disp_HI_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sHIin[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'Disp_H2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sH2in[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'Disp_Cool_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", scoolin[0])
+   np.savetxt(out_dir + '/ProcessedData/Reduced/' + 'Galaxies_in_subv_z' + str(ztarget) + wedge_name + ".txt", galaxies_in_subv[inw])
+   np.savetxt(out_dir + '/ProcessedData/Reduced/' + 'SFR_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sfrin[0])
+   np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'MHI_profiles_ap50ckpc_'+ method + "_dr"+ str(dr) + "_z"  + str(ztarget) + wedge_name + ".txt", mHIin[0])
+   np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'MH2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", mH2in[0])
+   np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'Z_gas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", ohin[0])
+   np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'Mstar_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", msin[0])
+   np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'Mdust_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", mdin[0])
+   np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'NumberPart0_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", np0in[0])
+   np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'NumberPart4_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", np4in[0])
+   np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'Mcoldgas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", coldgin[0])
+   np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'Disp_HI_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sHIin[0])
+   np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'Disp_H2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sH2in[0])
+   np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'Disp_Cool_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", scoolin[0])
    if(method == 'circular_apertures_face_on_map'):
        sHIh10 = disp_HI_profile_h10[inw,:]
        sH2h10 = disp_H2_profile_h10[inw,:]
@@ -603,14 +610,14 @@ if(ngals > 0):
        sH2h5 = disp_H2_profile_h5[inw,:]
        scoolh5 = disp_cool_profile_h5[inw,:]
 
-       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_HI_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sHIh10[0])
-       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_H2_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sH2h10[0])
-       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_Cool_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", scoolh10[0])
-       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_HI_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sHIh5[0])
-       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_H2_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sH2h5[0])
-       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_Cool_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", scoolh5[0])
+       np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'Disp_HI_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sHIh10[0])
+       np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'Disp_H2_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sH2h10[0])
+       np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'Disp_Cool_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", scoolh10[0])
+       np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'Disp_HI_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sHIh5[0])
+       np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'Disp_H2_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sH2h5[0])
+       np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'Disp_Cool_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", scoolh5[0])
 
    if(subvolume == 0): 
       #save radii info
-      np.savetxt(out_dir + '/ProcessedData/' +  'radii_info_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", r_dist_centre)
+      np.savetxt(out_dir + '/ProcessedData/Reduced/' +  'radii_info_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", r_dist_centre)
    

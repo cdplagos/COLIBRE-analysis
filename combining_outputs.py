@@ -24,8 +24,8 @@ method = 'circular_apertures_face_on_map'
 #model_name = 'L0050N0752/Thermal/'
 #model_name = 'L0025N0376/Thermal/'
 #model_name = 'L0025N0188/Thermal/'
-#model_name = 'L0025N0752/Thermal/'
-model_name = 'L200_m6/Thermal/'
+model_name = 'L0025N0752/Thermal/'
+#model_name = 'L200_m6/Thermal/'
 
 model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
 out_dir = '/cosma8/data/dp004/ngdg66/Runs/' + model_name
@@ -52,9 +52,9 @@ files_to_combine = ['SFR_profiles_ap50ckpc_',
  'Disp_Cool_h5_profiles_ap50ckpc_']
 
 
-ztarget = 0.8
+ztarget = 0.0
 dr = 1.0
-subv = range(0,640)
+subv = range(0,15) #640)
 
 ids = np.loadtxt(out_dir + dir_output_data +  'GalaxyProperties_z' + str(ztarget) + '.txt', unpack = True, usecols = [0])
 rbin = np.loadtxt(out_dir + dir_output_data +  'radii_info_' + method + "_dr" + str(dr) + "_z" + str(ztarget) + ".txt")
