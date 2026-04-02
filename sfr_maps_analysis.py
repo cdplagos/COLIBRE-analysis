@@ -21,9 +21,9 @@ method = 'circular_apertures_face_on_map'
 #################################################################################
 
 ################## select the model and redshift you want #######################
-model_name = 'L0100N1504/Thermal_non_equilibrium/'
+#model_name = 'L0100N1504/Thermal_non_equilibrium/'
 #model_name = 'L0050N0752/Thermal_non_equilibrium/'
-#model_name = 'L0025N0376/Thermal_non_equilibrium/'
+model_name = 'L0025N0376/Thermal/'
 model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
 
 #definitions below correspond to z=0
@@ -76,28 +76,29 @@ def distance_2d_grid_random(x,y, coord):
 
 
 def distance_2d_faceon(x,y,z, coord, spin_vec):
-    cross_prod = np.zeros(shape = (len(coord[:,0]), 3))
     coord_norm = np.zeros(shape = (len(coord[:,0]), 3))
 
-    #normalise coordinate vector of particles
-    normal_coord =  np.sqrt(coord[:,0]**2+ coord[:,1]**2 + coord[:,2]**2)
-    coord_norm[:,0] = coord[:,0]/normal_coord
-    coord_norm[:,1] = coord[:,1]/normal_coord
-    coord_norm[:,2] = coord[:,2]/normal_coord
+    #normalise coordinate vector of particlesi to centre of mass 
+    normal_coord =  np.sqrt((coord[:,0]-x)**2+ (coord[:,1]-y)**2 + (coord[:,2]-z)**2)
 
-    #calculate cross product vector
-    cross_prod[:,0] = (coord_norm[:,1] * spin_vec[2] - coord_norm[:,2] * spin_vec[1])
-    cross_prod[:,1] = (coord_norm[:,2] * spin_vec[0] - coord_norm[:,0] * spin_vec[2])
-    cross_prod[:,2] = (coord_norm[:,0] * spin_vec[1] - coord_norm[:,1] * spin_vec[0])
-    #calculate angle between vectors
-    sin_thetha = np.sin(np.acos(np.sqrt(cross_prod[:,0]**2 + cross_prod[:,1]**2 + cross_prod[:,2]**2)))
-    #return projected distance
-    dcentre3d = distance_3d(x,y,z, coord)
-    return dcentre3d * sin_thetha
+    coord_norm[:,0] = (coord[:,0]-x)/normal_coord
+    coord_norm[:,1] = (coord[:,1]-y)/normal_coord
+    coord_norm[:,2] = (coord[:,2]-z)/normal_coord
 
- 
+    #calculate the dot product between the coordinate vectors of the particles and the specific angular momentum
+    cos_theta = (coord_norm[:,0] * spin_vec[0] + coord_norm[:,1] * spin_vec[1] + coord_norm[:,2] * spin_vec[2])
+
+    #apply boundaries to avoid rounding issues
+    ind = np.where(cos_theta > 1)
+    cos_theta[ind] = 1
+    ind = np.where(cos_theta < -1)
+    cos_theta[ind] = -1
+    sin_theta = np.sin(np.acos(cos_theta))
+
+    return normal_coord * sin_theta, abs(normal_coord * cos_theta)
+
 ##### loop through redshifts ######
-for z in range(3,5): #,len(snap_files)):
+for z in range(0,1): #,len(snap_files)):
     snap_file =snap_files[z]
     ztarget = zstarget[z]
     comov_to_physical_length = 1.0 / (1.0 + ztarget)
@@ -106,10 +107,10 @@ for z in range(3,5): #,len(snap_files)):
     #fields_fof = /SOAP/HostHaloIndex, 
     #/InputHalos/HBTplus/HostFOFId
     fields_sgn = {'InputHalos': ('HaloCatalogueIndex', 'IsCentral')} 
-    fields ={'ExclusiveSphere/30kpc': ('StellarMass', 'StarFormationRate', 'HalfMassRadiusStars', 'CentreOfMass', 'AtomicHydrogenMass', 'MolecularHydrogenMass', 'KappaCorotStars', 'KappaCorotGas', 'DiscToTotalStellarMassFraction', 'SpinParameter', 'MassWeightedMeanStellarAge', 'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasLowLimit' ,'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasHighLimit', 'AngularMomentumStars', 'DustLargeGrainMass', 'DustSmallGrainMass')}
+    fields ={'ExclusiveSphere/30kpc': ('StellarMass', 'StarFormationRate', 'HalfMassRadiusStars', 'CentreOfMass', 'AtomicHydrogenMass', 'MolecularHydrogenMass', 'KappaCorotStars', 'KappaCorotGas', 'DiscToTotalStellarMassFraction', 'MassWeightedMeanStellarAge', 'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasLowLimit' ,'LogarithmicMassWeightedDiffuseOxygenOverHydrogenOfGasHighLimit', 'AngularMomentumStars', 'DustLargeGrainMass', 'DustSmallGrainMass')}
     h5data_groups = common.read_group_data_colibre(model_dir, snap_file, fields)
     h5data_idgroups = common.read_group_data_colibre(model_dir, snap_file, fields_sgn)
-    (m30, sfr30, r50, cp, mHI, mH2, kappacostar, kappacogas, disctotot, spin, stellarage, ZgasLow, ZgasHigh, Jstars, mdustl, mdusts) = h5data_groups
+    (m30, sfr30, r50, cp, mHI, mH2, kappacostar, kappacogas, disctotot, stellarage, ZgasLow, ZgasHigh, Jstars, mdustl, mdusts) = h5data_groups
 
     #unit conversion
     mdust = (mdustl + mdusts) * Mu
@@ -144,7 +145,6 @@ for z in range(3,5): #,len(snap_files)):
        kappacostar_in = kappacostar[select]
        kappacogas_in = kappacogas[select]
        disctotot_in = disctotot[select]
-       spin_in = spin[select]
        stellarage_in = stellarage[select]
        ZgasLow_in = ZgasLow[select]
        ZgasHigh_in = ZgasHigh[select]
@@ -171,11 +171,10 @@ for z in range(3,5): #,len(snap_files)):
        gal_props[:,10] = kappacostar_in
        gal_props[:,11] = kappacogas_in
        gal_props[:,12] = disctotot_in
-       gal_props[:,13] = spin_in
-       gal_props[:,14] = stellarage_in
-       gal_props[:,15] = ZgasLow_in
-       gal_props[:,16] = ZgasHigh_in
-       gal_props[:,17] = mdust_in
+       gal_props[:,13] = stellarage_in
+       gal_props[:,14] = ZgasLow_in
+       gal_props[:,15] = ZgasHigh_in
+       gal_props[:,16] = mdust_in
        np.savetxt('Runs/' + model_name + '/ProcessedData/' + 'GalaxyProperties_z' + str(ztarget) + '.txt', gal_props)
        print("Have saved galaxy properties") 
        del(gal_props) #releasing memory
@@ -423,7 +422,6 @@ for z in range(3,5): #,len(snap_files)):
                          del(dcentre_i, dcentre_j,mp4_inr,inr,dcentre_j_inr)
               del(coord_in_p4,m_part4)
 
-  
        #save galaxy profiles
        np.savetxt('Runs/' + model_name + '/ProcessedData/' + 'SFR_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + ".txt", sfr_profile)
        np.savetxt('Runs/' + model_name + '/ProcessedData/' +  'MHI_profiles_ap50ckpc_'+ method + "_dr"+ str(dr) + "_z"  + str(ztarget) + ".txt", mHI_profile)

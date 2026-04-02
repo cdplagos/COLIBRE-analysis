@@ -126,7 +126,6 @@ def distance_2d_grid_face(x, y, z, coord, spin_vec):
     #select particle that is the closest to perpendicular to the spin:
     plane = np.where(abs(costhetapos) == min(abs(costhetapos))) #make sure cosine is as small as it can be
     VecObs = coordin[plane[0],:] / magpos[plane[0]]
-    print(VecObs.shape)
     VecObs = VecObs[0]
     vectorplane = np.zeros(shape = 3)
     vectorplane[0] = (VecObs[1]*spin_vec[2] - VecObs[2]*spin_vec[1])
@@ -146,25 +145,26 @@ def distance_2d_grid_face(x, y, z, coord, spin_vec):
     return xnew, ynew
 
 def distance_2d_faceon(x,y,z, coord, spin_vec):
-    cross_prod = np.zeros(shape = (len(coord[:,0]), 3))
     coord_norm = np.zeros(shape = (len(coord[:,0]), 3))
 
-    #normalise coordinate vector of particles
-    normal_coord =  np.sqrt(coord[:,0]**2+ coord[:,1]**2 + coord[:,2]**2)
-    coord_norm[:,0] = coord[:,0]/normal_coord
-    coord_norm[:,1] = coord[:,1]/normal_coord
-    coord_norm[:,2] = coord[:,2]/normal_coord
+    #normalise coordinate vector of particlesi to centre of mass 
+    normal_coord =  np.sqrt((coord[:,0]-x)**2+ (coord[:,1]-y)**2 + (coord[:,2]-z)**2)
 
-    #calculate cross product vector
-    cross_prod[:,0] = (coord_norm[:,1] * spin_vec[2] - coord_norm[:,2] * spin_vec[1])
-    cross_prod[:,1] = (coord_norm[:,2] * spin_vec[0] - coord_norm[:,0] * spin_vec[2])
-    cross_prod[:,2] = (coord_norm[:,0] * spin_vec[1] - coord_norm[:,1] * spin_vec[0])
-    #calculate angle between vectors
-    cos_theta = np.sqrt(cross_prod[:,0]**2 + cross_prod[:,1]**2 + cross_prod[:,2]**2)
+    coord_norm[:,0] = (coord[:,0]-x)/normal_coord
+    coord_norm[:,1] = (coord[:,1]-y)/normal_coord
+    coord_norm[:,2] = (coord[:,2]-z)/normal_coord
+
+    #calculate the dot product between the coordinate vectors of the particles and the specific angular momentum
+    cos_theta = (coord_norm[:,0] * spin_vec[0] + coord_norm[:,1] * spin_vec[1] + coord_norm[:,2] * spin_vec[2])
+
+    #apply boundaries to avoid rounding issues
+    ind = np.where(cos_theta > 1)
+    cos_theta[ind] = 1
+    ind = np.where(cos_theta < -1)
+    cos_theta[ind] = -1
     sin_theta = np.sin(np.acos(cos_theta))
-    #return projected distance
-    dcentre3d = distance_3d(x,y,z, coord)
-    return dcentre3d * sin_theta, dcentre3d * cos_theta
+
+    return normal_coord * sin_theta, abs(normal_coord * cos_theta)
 
 
 def v_z_dir(v,spin):
@@ -367,7 +367,6 @@ if(ngals > 0):
              els[ind] = 0
              return els
          elementmassfracs = reduce_dim_elements(elementmassfracs)
-
 
          elementmassfracsdiff = elementmassfracs
          elementmassfracsdiff[:,1] = elementmassfracs[:,1] - DustMassFracTot #remove dust contribution

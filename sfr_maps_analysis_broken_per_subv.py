@@ -33,8 +33,8 @@ method = 'circular_apertures_face_on_map'
 #model_name = 'L0050N0752/Thermal/'
 #model_name = 'L0025N0376/Thermal/'
 #model_name = 'L0025N0188/Thermal/'
-model_name = 'L0025N0752/Thermal/'
-#model_name = 'L200_m6/Thermal/'
+#model_name = 'L0025N0752/Thermal/'
+model_name = 'L200_m6/Thermal/'
 #model_name = 'L0050N0752/HYBRID_AGN_m6/'
 model_dir = '/cosma8/data/dp004/colibre/Runs/' + model_name
 out_dir = '/cosma8/data/dp004/ngdg66/Runs/' + model_name + '/'
@@ -81,7 +81,7 @@ mH = 1.6735575e-24 #in gr
 #################################################################################
 
 #define radial bins of interest. This going from 0 to 50kpc, in bins of 1kpc
-rmax = 50
+rmax = 100
 rmin = 0
 dr = 1.0
 rbins = np.arange(rmin, rmax, dr)
@@ -124,7 +124,6 @@ def distance_2d_grid_face(x, y, z, coord, spin_vec):
     #select particle that is the closest to perpendicular to the spin:
     plane = np.where(abs(costhetapos) == min(abs(costhetapos))) #make sure cosine is as small as it can be
     VecObs = coordin[plane[0],:] / magpos[plane[0]]
-    print(VecObs.shape)
     VecObs = VecObs[0]
     vectorplane = np.zeros(shape = 3)
     vectorplane[0] = (VecObs[1]*spin_vec[2] - VecObs[2]*spin_vec[1])
@@ -144,25 +143,26 @@ def distance_2d_grid_face(x, y, z, coord, spin_vec):
     return xnew, ynew
 
 def distance_2d_faceon(x,y,z, coord, spin_vec):
-    cross_prod = np.zeros(shape = (len(coord[:,0]), 3))
     coord_norm = np.zeros(shape = (len(coord[:,0]), 3))
 
-    #normalise coordinate vector of particles
-    normal_coord =  np.sqrt(coord[:,0]**2+ coord[:,1]**2 + coord[:,2]**2)
-    coord_norm[:,0] = coord[:,0]/normal_coord
-    coord_norm[:,1] = coord[:,1]/normal_coord
-    coord_norm[:,2] = coord[:,2]/normal_coord
+    #normalise coordinate vector of particlesi to centre of mass 
+    normal_coord =  np.sqrt((coord[:,0]-x)**2+ (coord[:,1]-y)**2 + (coord[:,2]-z)**2)
 
-    #calculate cross product vector
-    cross_prod[:,0] = (coord_norm[:,1] * spin_vec[2] - coord_norm[:,2] * spin_vec[1])
-    cross_prod[:,1] = (coord_norm[:,2] * spin_vec[0] - coord_norm[:,0] * spin_vec[2])
-    cross_prod[:,2] = (coord_norm[:,0] * spin_vec[1] - coord_norm[:,1] * spin_vec[0])
-    #calculate angle between vectors
-    cos_theta = np.sqrt(cross_prod[:,0]**2 + cross_prod[:,1]**2 + cross_prod[:,2]**2)
+    coord_norm[:,0] = (coord[:,0]-x)/normal_coord
+    coord_norm[:,1] = (coord[:,1]-y)/normal_coord
+    coord_norm[:,2] = (coord[:,2]-z)/normal_coord
+
+    #calculate the dot product between the coordinate vectors of the particles and the specific angular momentum
+    cos_theta = (coord_norm[:,0] * spin_vec[0] + coord_norm[:,1] * spin_vec[1] + coord_norm[:,2] * spin_vec[2])
+
+    #apply boundaries to avoid rounding issues
+    ind = np.where(cos_theta > 1)
+    cos_theta[ind] = 1
+    ind = np.where(cos_theta < -1)
+    cos_theta[ind] = -1
     sin_theta = np.sin(np.acos(cos_theta))
-    #return projected distance
-    dcentre3d = distance_3d(x,y,z, coord)
-    return dcentre3d * sin_theta, dcentre3d * cos_theta
+
+    return normal_coord * sin_theta, abs(normal_coord * cos_theta)
 
 
 def v_z_dir(v,spin):
@@ -638,6 +638,7 @@ if(ngals > 0):
    #save galaxy profiles
    sfrin = sfr_profile[inw,:]
    mHIin = mHI_profile[inw,:]
+   print("Maximum HI surface density in Msun/pc2:", max(mHI_profile[:,0]/np.pi/1e6))
    mH2in = mH2_profile[inw,:]
    ohin  = oh_profile[inw,:]
    #fehin = feh_profile[inw,:]
@@ -651,19 +652,19 @@ if(ngals > 0):
    scoolin = disp_cool_profile[inw,:]
    wedge_name = 'subvolume_' + str(subvolume)
    np.savetxt(out_dir + '/ProcessedData/' + 'Galaxies_in_subv_z' + str(ztarget) + wedge_name + ".txt", galaxies_in_subv[inw])
-   np.savetxt(out_dir + '/ProcessedData/' + 'SFR_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sfrin[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'MHI_profiles_ap50ckpc_'+ method + "_dr"+ str(dr) + "_z"  + str(ztarget) + wedge_name + ".txt", mHIin[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'MH2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", mH2in[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'OH_gas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", ohin[0])
-   #np.savetxt(out_dir + '/ProcessedData/' +  'FeH_gas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", fehin[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'Mstar_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", msin[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'Mdust_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", mdin[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'NumberPart0_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", np0in[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'NumberPart4_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", np4in[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'Mcoldgas_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", coldgin[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'Disp_HI_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sHIin[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'Disp_H2_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sH2in[0])
-   np.savetxt(out_dir + '/ProcessedData/' +  'Disp_Cool_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", scoolin[0])
+   np.savetxt(out_dir + '/ProcessedData/' + 'SFR_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sfrin[0])
+   np.savetxt(out_dir + '/ProcessedData/' +  'MHI_profiles_ap100ckpc_'+ method + "_dr"+ str(dr) + "_z"  + str(ztarget) + wedge_name + ".txt", mHIin[0])
+   np.savetxt(out_dir + '/ProcessedData/' +  'MH2_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", mH2in[0])
+   np.savetxt(out_dir + '/ProcessedData/' +  'OH_gas_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", ohin[0])
+   #np.savetxt(out_dir + '/ProcessedData/' +  'FeH_gas_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", fehin[0])
+   np.savetxt(out_dir + '/ProcessedData/' +  'Mstar_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", msin[0])
+   np.savetxt(out_dir + '/ProcessedData/' +  'Mdust_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", mdin[0])
+   np.savetxt(out_dir + '/ProcessedData/' +  'NumberPart0_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", np0in[0])
+   np.savetxt(out_dir + '/ProcessedData/' +  'NumberPart4_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", np4in[0])
+   np.savetxt(out_dir + '/ProcessedData/' +  'Mcoldgas_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", coldgin[0])
+   np.savetxt(out_dir + '/ProcessedData/' +  'Disp_HI_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sHIin[0])
+   np.savetxt(out_dir + '/ProcessedData/' +  'Disp_H2_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sH2in[0])
+   np.savetxt(out_dir + '/ProcessedData/' +  'Disp_Cool_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", scoolin[0])
    if(method == 'circular_apertures_face_on_map'):
        sHIh10 = disp_HI_profile_h10[inw,:]
        sH2h10 = disp_H2_profile_h10[inw,:]
@@ -672,12 +673,12 @@ if(ngals > 0):
        sH2h5 = disp_H2_profile_h5[inw,:]
        scoolh5 = disp_cool_profile_h5[inw,:]
 
-       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_HI_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sHIh10[0])
-       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_H2_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sH2h10[0])
-       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_Cool_h10_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", scoolh10[0])
-       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_HI_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sHIh5[0])
-       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_H2_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sH2h5[0])
-       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_Cool_h5_profiles_ap50ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", scoolh5[0])
+       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_HI_h10_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sHIh10[0])
+       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_H2_h10_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sH2h10[0])
+       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_Cool_h10_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", scoolh10[0])
+       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_HI_h5_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sHIh5[0])
+       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_H2_h5_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", sH2h5[0])
+       np.savetxt(out_dir + '/ProcessedData/' +  'Disp_Cool_h5_profiles_ap100ckpc_' + method + "_dr"+ str(dr) + "_z" + str(ztarget) + wedge_name + ".txt", scoolh5[0])
 
    if(subvolume == 0): 
       #save radii info
