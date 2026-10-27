@@ -529,7 +529,7 @@ if(ngals > 0):
                            disp_H2_profile_h5[g,i] = np.sqrt(np.sum(mh2_partin[inh] * (vr_inr[inh]**2 + sth_inr2[inh])) / np.sum(mh2_partin[inh]))
                            disp_HI_profile_h5[g,i] = np.sqrt(np.sum(mhi_partin[inh] * (vr_inr[inh]**2 + sth_inr2[inh])) / np.sum(mhi_partin[inh]))
 
-                     coldp = np.where((temp_inr < 10**(4.5)) & (dens_inr > 0)) #select particles with temperatures cooler than 10^4.5K and calculate metallicity profiles with those particles only.
+                     coldp = np.where((temp_inr < 10**(4.5)) & (dens_inr > 0.1)) #select particles with temperatures cooler than 10^4.5K and calculate metallicity profiles with those particles only.
                      if(len(mz_inr[coldp]) > 0):
                         mhdiff_inr_cold = mh_inr[coldp]
                         mz_inr_cold = mz_inr[coldp]
